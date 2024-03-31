@@ -28,10 +28,10 @@ use std::collections::{BTreeSet, HashMap, VecDeque};
 use std::rc::Rc;
 
 pub type Terminal = char;
-pub type NonTerminal = String;
+pub type NonTerminal = &'static str;
 
 /// A sequence of `Symbol`s forms the right-hand-side of a CFG production.
-#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Symbol {
     Terminal(Terminal),
     NonTerminal(NonTerminal),
@@ -40,19 +40,19 @@ pub enum Symbol {
 impl Symbol {
     fn strval(&self) -> String {
         match self {
-            Symbol::Terminal(ref c) => c.to_string(),
-            Symbol::NonTerminal(ref s) => s.clone(),
+            Symbol::Terminal(c) => c.to_string(),
+            Symbol::NonTerminal(s) => s.to_string(),
         }
     }
 }
 
 /// Convenience function for creating a nonterminal `Symbol`
-pub fn nt(x: impl Into<NonTerminal>) -> Symbol {
-    Symbol::NonTerminal(x.into())
+pub const fn nt<'a>(x: NonTerminal) -> Symbol {
+    Symbol::NonTerminal(x)
 }
 
 /// Convenience function for creating a terminal `Symbol`
-pub fn tr(x: Terminal) -> Symbol {
+pub const fn tr(x: Terminal) -> Symbol {
     Symbol::Terminal(x)
 }
 
@@ -65,7 +65,7 @@ pub struct CFG {
 
 impl CFG {
     /// Initialize the CFG with the starting symbol.
-    pub fn new(start: impl Into<NonTerminal>) -> Self {
+    pub fn new(start: NonTerminal) -> Self {
         Self {
             start: start.into(),
             rule_map: HashMap::new(),
@@ -73,7 +73,7 @@ impl CFG {
         }
     }
 
-    pub fn add_rule(&mut self, lhs: impl Into<NonTerminal>, rhs: Vec<Symbol>) {
+    pub fn add_rule(&mut self, lhs: NonTerminal, rhs: Vec<Symbol>) {
         let lhs: NonTerminal = lhs.into();
         self.rule_map
             .entry(lhs)
@@ -81,50 +81,47 @@ impl CFG {
             .push(rhs)
     }
 
-    pub fn rules(&self, lhs: &NonTerminal) -> &[Vec<Symbol>] {
-        self.rule_map.get(lhs).unwrap_or(&self.dummy).as_slice()
+    pub fn rules(&self, lhs: NonTerminal) -> &[Vec<Symbol>] {
+        &self.rule_map.get(lhs).unwrap_or(&self.dummy)
+    }
+
+    /// Perform Earley parsing on the input using the given CFG.
+    pub fn parse(&self, input: &str) -> Option<ASTNode> {
+        parse(self, input)
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct ASTNode {
-    sym: Symbol,
-    children: Vec<ASTNode>,
+pub enum ASTNode {
+    Terminal(Terminal),
+    NonTerminal {
+        sym: NonTerminal,
+        children: Vec<ASTNode>,
+    },
 }
 
 impl ASTNode {
-    pub fn string_value(&self) -> String {
-        match self.sym {
-            Symbol::Terminal(ref c) => c.to_string(),
-            Symbol::NonTerminal(ref s) => s.clone(),
+    pub fn unwrap_terminal(&self) -> Terminal {
+        if let &Self::Terminal(c) = self {
+            c
+        } else {
+            panic!("Not a terminal")
         }
-    }
-
-    pub fn symbol(&self) -> &Symbol {
-        &self.sym
-    }
-
-    pub fn is_terminal(&self) -> bool {
-        match self.sym {
-            Symbol::Terminal(_) => true,
-            Symbol::NonTerminal(_) => false,
-        }
-    }
-
-    pub fn children(&self) -> &[ASTNode] {
-        self.children.as_slice()
     }
 
     /// Collapse the parse tree.
     /// Returns a tree where no nonterminal node has a single child.
-    pub fn collapse(mut self) -> ASTNode {
-        if self.children.is_empty() || self.is_terminal() {
-            self
-        } else if self.children.len() == 1 {
-            return self.children.pop().unwrap().collapse();
-        } else {
-            self.children = self.children.into_iter().map(|c| c.collapse()).collect();
-            self
+    pub fn collapse(self) -> Self {
+        match self {
+            Self::Terminal { .. } => self,
+            Self::NonTerminal { mut children, sym } => {
+                if children.len() == 1 {
+                    return children.pop().unwrap().collapse();
+                } else {
+                    let children = children.into_iter().map(|c| c.collapse()).collect();
+                    Self::NonTerminal { sym, children }
+                }
+            }
         }
     }
 }
@@ -158,7 +155,7 @@ impl EarleyState {
 
     fn advance(&self) -> Self {
         Self {
-            lhs: self.lhs.clone(),
+            lhs: self.lhs,
             rhs: self.rhs.clone(),
             rhs_idx: self.rhs_idx + 1,
             start_idx: self.start_idx,
@@ -168,7 +165,7 @@ impl EarleyState {
     }
 
     fn next_sym(&self) -> Symbol {
-        self.rhs[self.rhs_idx].clone()
+        self.rhs[self.rhs_idx]
     }
 }
 
@@ -214,27 +211,23 @@ impl cmp::PartialEq for EarleyState {
 
 impl cmp::Eq for EarleyState {}
 
-/// Perform Earley parsing on the input using the given CFG.
-pub fn parse(input: &str, grammar: &CFG) -> Option<ASTNode> {
+fn parse(cfg: &CFG, input: &str) -> Option<ASTNode> {
+    let chars = input.chars().collect::<Vec<_>>();
+
     let mut mem = vec![BTreeSet::new(); input.len() + 1];
-    for rhs in grammar.rules(&grammar.start) {
-        mem[0].insert(Rc::new(EarleyState::new(
-            grammar.start.clone(),
-            rhs.clone(),
-            0,
-        )));
+    for rhs in cfg.rules(&cfg.start) {
+        mem[0].insert(Rc::new(EarleyState::new(cfg.start, rhs.clone(), 0)));
     }
 
     for i in 0..=input.len() {
-        let mut q = mem[i].iter().map(|s| s.clone()).collect::<VecDeque<_>>();
+        let mut q = mem[i].iter().cloned().collect::<VecDeque<_>>();
         while let Some(curr_state) = q.pop_front() {
             if !curr_state.done() {
                 match curr_state.next_sym() {
                     Symbol::NonTerminal(ref nt) => {
                         // predict
-                        for rhs in grammar.rules(nt) {
-                            let mut new_state =
-                                Rc::new(EarleyState::new(nt.clone(), rhs.clone(), i));
+                        for rhs in cfg.rules(nt) {
+                            let mut new_state = Rc::new(EarleyState::new(nt, rhs.clone(), i));
                             if !mem[i].contains(&new_state) {
                                 Rc::get_mut(&mut new_state).unwrap().left_parent =
                                     Some(Rc::clone(&curr_state));
@@ -245,7 +238,7 @@ pub fn parse(input: &str, grammar: &CFG) -> Option<ASTNode> {
                     }
                     Symbol::Terminal(t) => {
                         // Scan
-                        if i < input.len() && t == input.as_bytes()[i] as char {
+                        if i < input.len() && t == chars[i] {
                             let mut new_state = Rc::new(curr_state.advance());
                             if !mem[i + 1].contains(&new_state) {
                                 Rc::get_mut(&mut new_state).unwrap().left_parent =
@@ -259,12 +252,10 @@ pub fn parse(input: &str, grammar: &CFG) -> Option<ASTNode> {
                 // Complete
                 let iterlist = mem[curr_state.start_idx]
                     .iter()
-                    .map(|s| Rc::clone(s))
+                    .cloned()
                     .collect::<Vec<_>>();
-                for state in iterlist.into_iter() {
-                    if !state.done()
-                        && state.next_sym() == Symbol::NonTerminal(curr_state.lhs.clone())
-                    {
+                for state in iterlist {
+                    if !state.done() && state.next_sym() == Symbol::NonTerminal(curr_state.lhs) {
                         let mut new_state = Rc::new(state.advance());
                         if !mem[i].contains(&new_state) {
                             Rc::get_mut(&mut new_state).unwrap().left_parent =
@@ -283,31 +274,25 @@ pub fn parse(input: &str, grammar: &CFG) -> Option<ASTNode> {
     fn generate_parse_tree(state: Rc<EarleyState>) -> ASTNode {
         let mut iter = Rc::clone(&state);
         let mut children = Vec::new();
-        for i in (0..state.rhs.len()).rev() {
-            match state.rhs[i] {
+        for sym in state.rhs.iter().rev() {
+            match *sym {
                 Symbol::NonTerminal(_) => children.insert(
                     0,
                     generate_parse_tree(Rc::clone(iter.right_parent.as_ref().unwrap())),
                 ),
-                Symbol::Terminal(tt) => children.insert(
-                    0,
-                    ASTNode {
-                        sym: tr(tt),
-                        children: Vec::new(),
-                    },
-                ),
+                Symbol::Terminal(tt) => children.insert(0, ASTNode::Terminal(tt)),
             }
             iter = Rc::clone(iter.left_parent.as_ref().unwrap());
         }
-        return ASTNode {
-            sym: nt(state.lhs.clone()),
+        return ASTNode::NonTerminal {
+            sym: state.lhs,
             children,
         };
     }
 
     mem[input.len()]
         .iter()
-        .filter(|&s| s.lhs == grammar.start && s.start_idx == 0 && s.done())
+        .filter(|&s| s.lhs == cfg.start && s.start_idx == 0 && s.done())
         .nth(0)
         .map(|state| generate_parse_tree(Rc::clone(state)))
 }
@@ -315,13 +300,13 @@ pub fn parse(input: &str, grammar: &CFG) -> Option<ASTNode> {
 /// A struct with a pretty `Debug` impl for `ASTNode`s.
 pub struct PrettyPrint<'a>(pub &'a ASTNode);
 
-impl<'a> std::fmt::Debug for PrettyPrint<'a> {
+impl std::fmt::Debug for PrettyPrint<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.0.sym {
-            Symbol::Terminal(c) => write!(f, "'{}'", c),
-            Symbol::NonTerminal(ref s) => {
-                let mut tup = f.debug_tuple(s);
-                for child in self.0.children() {
+        match self.0 {
+            ASTNode::Terminal(c) => write!(f, "'{c}'"),
+            ASTNode::NonTerminal { sym, children } => {
+                let mut tup = f.debug_tuple(sym);
+                for child in children {
                     tup.field(&PrettyPrint(child));
                 }
                 tup.finish()
@@ -349,11 +334,20 @@ mod test {
             g.add_rule("FACTOR", vec![tr(a)]);
         }
 
-        assert!(parse("5--5", &g).is_none());
-        assert!(parse("5-5", &g).is_some());
+        assert!(g.parse("5--5").is_none());
+        assert!(g.parse("5-5").is_some());
 
-        let result = parse("(5-5)/(2-3/4)", &g);
+        let tree = g.parse("5-6").unwrap().collapse();
+        if let ASTNode::NonTerminal { sym: _, children } = tree {
+            assert_eq!('5', children[0].unwrap_terminal());
+            assert_eq!('-', children[1].unwrap_terminal());
+            assert_eq!('6', children[2].unwrap_terminal());
+        } else {
+            panic!("Expected nonterminal");
+        }
+
+        let result = g.parse("(5-5)/(2-3/4)");
         assert!(result.is_some());
-        println!("{:?}", PrettyPrint(&result.unwrap().collapse()));
+        println!("{:#?}", PrettyPrint(&result.unwrap().collapse()));
     }
 }

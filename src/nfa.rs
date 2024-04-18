@@ -155,7 +155,7 @@ impl NFA {
         nfa
     }
 
-   fn epsilon_close(mut nfa: NFA) -> Self {
+    pub fn epsilon_close(mut nfa: NFA) -> Self {
         let mut old: HashSet<(State, State)> = HashSet::new();
         let mut cur: HashSet<(State, State)> = HashSet::new();
         // find all episolon transitions from all state

@@ -11,14 +11,15 @@ use std::fmt::Result;
 use std::fs::File;
 use std::io::{self, BufReader, BufRead};
 
-fn grep(regex: &str, filenmae: &str) 
+fn grep(regex: &str, filename: &str) 
 -> std::io::Result<()> 
-{
+{   
     let cfg = cfg_for_regular_expression();
     let ast = cfg.parse(regex).unwrap().collapse();
     let nfa = NFA::from_regex(&ast);
+    let nfa = NFA::epsilon_close(nfa);
 
-    let file = File::open(filenmae)?;
+    let file = File::open(filename)?;
     let reader = BufReader::new(file);
 
     for (index, line) in reader.lines().enumerate() {
@@ -42,6 +43,7 @@ fn main() {
 
     let regex = &args[1];
     let input_file = &args[2];
+
 
     match grep(regex, input_file) {
         Ok(()) => (),

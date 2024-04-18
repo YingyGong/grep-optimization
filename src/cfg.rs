@@ -21,7 +21,7 @@ pub fn cfg_for_regular_expression2() -> CFG {
     // Kleene star
     cfg.add_rule("Term", vec![nt("Term"), tr('*')]);
 
-    // pluss
+    // plus
     cfg.add_rule("Term", vec![nt("Term"), tr('+')]);
 
     // question mark
@@ -132,5 +132,13 @@ mod test {
         let result = cfg.parse("ab*|c+");
         assert!(result.is_some());
         // println!("{:#?}", PrettyPrint(&result.unwrap().collapse()));
+    }
+
+    #[test]
+    fn test_parentheses() {
+        let cfg = cfg_for_regular_expression();
+        let result = cfg.parse("a(b|c)");
+        assert!(result.is_some());
+        println!("{:#?}", PrettyPrint(&result.unwrap().collapse()));
     }
 }

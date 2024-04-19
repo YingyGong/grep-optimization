@@ -27,7 +27,7 @@ fn grep(regex: &str, filename: &str)
         // start from any index in the line
         let output_strs = nfa.check_str_princeton(&line);
         for output_str in output_strs {
-            println!("{}:{}", index + 1, output_str);
+            println!("{}:{}", index, output_str);
         }
     }
 

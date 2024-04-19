@@ -116,6 +116,10 @@ impl NFA {
         nfa.accept_states.insert(accept_state.clone());
 
         match c {
+            '.' => {
+                let all_chars = 0x20u8..=0x7Eu8;
+                nfa.add_transition_ch_list(all_chars, accept_state.clone());
+            }
             's' => {
                 let upperclass_letters = 0x41u8..=0x5Au8;
                 let lowerclass_letters = 0x61u8..=0x7Au8;
@@ -333,7 +337,11 @@ impl NFA {
                 _ => // print out sym
                 panic!("Invalid non-terminal {}", sym),
             }
-            ASTNode::Terminal (terminal) => NFA::from_char(*terminal),
+            ASTNode::Terminal (terminal) => 
+            match terminal {
+                '.' => NFA::from_char_class('.'),
+                _ => NFA::from_char(*terminal),
+            }
         }
     }
 

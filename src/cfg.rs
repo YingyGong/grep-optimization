@@ -39,13 +39,13 @@ pub fn cfg_for_regular_expression2() -> CFG {
     // except { |, *, (, ), ., +, ?, \} are regular expressions (literals).
     for c in 0x20u8..=0x7E {
         let ch = c as char;
-        if !"{|*()+?\\}".contains(ch) {
+        if !"{|*().+?\\}".contains(ch) {
             cfg.add_rule("Literal", vec![tr(ch)])
         }
     }
 
     // escaped special characters
-    for &c in &['|', '*', '(', ')', '+', '?', '\\'] {
+    for &c in &['|', '*', '(', ')', '.', '+', '?', '\\'] {
         cfg.add_rule("Literal", vec![tr('\\'), tr(c)]);
     }
 

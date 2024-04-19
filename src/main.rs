@@ -12,7 +12,7 @@ use std::fmt::Result;
 use std::fs::File;
 use std::io::{self, BufReader, BufRead};
 
-fn grep(regex: &str, filename: &str) 
+fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool) 
 -> std::io::Result<()> 
 {   
     let cfg = cfg_for_regular_expression();
@@ -29,11 +29,23 @@ fn grep(regex: &str, filename: &str)
         let output_strs = nfa.check_str_princeton(&line);
         // change it to set
         let output_strs: HashSet<String> = output_strs.into_iter().collect();
-        // for output_str in output_strs {
-        //     println!("{}:{}", index + 1, output_str);
-        // }
-        if output_strs.len() > 0 {
+        if only_matching && line_number {
+            for output_str in output_strs {
+                println!("{}:{}", index + 1, output_str);
+            }
+            continue;
+        }
+        if only_matching {
+            for output_str in output_strs {
+                println!("{}", output_str);
+            }
+            continue;
+        }
+        if line_number && output_strs.len() > 0 {
             println!("{}:{}", index + 1, line);
+        }
+        if output_strs.len() > 0 {
+            println!("{}", line);
         }
     }
 
@@ -48,10 +60,12 @@ fn main() {
     }
 
     let regex = &args[1];
-    let input_file = &args[2];
+    let input_file: &String = &args[2];
+    let show_line_numbers = args.iter().any(|arg| arg == "-line-number");
+    let show_only_matching = args.iter().any(|arg| arg == "-only-matching");
 
 
-    match grep(regex, input_file) {
+    match grep(regex, input_file, show_only_matching, show_line_numbers) {
         Ok(()) => (),
         Err(e) => eprintln!("Error: {}", e),
     }

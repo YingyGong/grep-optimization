@@ -407,7 +407,9 @@ impl NFA {
             // check any matched
             for state in &cur_states {
                 if self.accept_states.contains(&state) {
-                    if let Some(start_positions) = start_positions.get(&state) {
+                    if let Some(start_positions) = start_positions.get_mut(&state) {
+                        // sort the start positions in ascending order
+                        start_positions.sort();
                         // turn start_positions into a set
                         let start_positions: HashSet<usize> = start_positions.iter().cloned().collect();
                         for start_pos in start_positions {

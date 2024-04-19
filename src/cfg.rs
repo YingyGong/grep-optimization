@@ -124,6 +124,7 @@ pub fn cfg_for_regular_expression() -> CFG {
     cfg
 }
 
+#[cfg(test)]
 mod test {
     use super::*;
     #[test]
@@ -141,4 +142,21 @@ mod test {
         assert!(result.is_some());
         println!("{:#?}", PrettyPrint(&result.unwrap().collapse()));
     }
+
+    #[test]
+    fn test_character_classes() {
+        let cfg = cfg_for_regular_expression();
+        let result = cfg.parse(r"\s\d\D\w\W");
+        assert!(result.is_some());
+        println!("{:#?}", PrettyPrint(&result.unwrap().collapse()));
+    }
+
+    #[test]
+    fn test_special_characters() {
+        let cfg = cfg_for_regular_expression();
+        let result = cfg.parse(r"\*");
+        assert!(result.is_some());
+        println!("{:#?}", PrettyPrint(&result.unwrap().collapse()));
+    }
+
 }

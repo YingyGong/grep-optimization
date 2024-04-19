@@ -1,11 +1,12 @@
 use std::collections::{HashMap, HashSet};
+use std::vec;
 use crate::earley_parse::{ASTNode};
 use std::str::FromStr;
 use crate::earley_parse::CFG;
 use crate::cfg::cfg_for_regular_expression;
 use crate::earley_parse::PrettyPrint;
 use std::iter::Filter;
-
+use core::ops::RangeInclusive;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct State {
@@ -16,6 +17,7 @@ struct State {
 enum Transition {
     Epsilon,
     Char(char),
+    Range(char, char),
 }
 
 #[derive(Debug)]
@@ -64,12 +66,11 @@ impl NFA {
         self.transitions.entry(from).or_insert_with(Vec::new).push((transition, to));
     }
 
-    fn from_char(c: char) -> Self {
-        let mut nfa = NFA::new();
-        let accept_state = nfa.add_state();
-        nfa.accept_states.insert(accept_state.clone());
-        nfa.add_transition(nfa.start_state.clone(), Transition::Char(c), accept_state);
-        nfa
+    fn add_transition_ch_list(&mut self, char_vec: RangeInclusive<u8>, to: State) {
+        for c in char_vec {
+            let c = c as char;
+            self.add_transition(self.start_state.clone(), Transition::Char(c), to.clone());
+        }
     }
 
     fn modify_state_id(self, shift_num: usize) -> Self{
@@ -101,6 +102,73 @@ impl NFA {
         new_nfa
 }
 
+    fn from_char(c: char) -> Self {
+        let mut nfa = NFA::new();
+        let accept_state = nfa.add_state();
+        nfa.accept_states.insert(accept_state.clone());
+        nfa.add_transition(nfa.start_state.clone(), Transition::Char(c), accept_state);
+        nfa
+    }
+
+    fn from_char_class(c: char) -> Self {
+        let mut nfa = NFA::new();
+        let accept_state = nfa.add_state();
+        nfa.accept_states.insert(accept_state.clone());
+
+        match c {
+            's' => {
+                let upperclass_letters = 0x41u8..=0x5Au8;
+                let lowerclass_letters = 0x61u8..=0x7Au8;
+                nfa.add_transition_ch_list(upperclass_letters, accept_state.clone());
+                nfa.add_transition_ch_list(lowerclass_letters, accept_state.clone());
+            }
+            'S' => {
+                let all_except_letters1 = 0x20u8..=0x41u8;
+                let all_except_letters2 = 0x5Bu8..=0x61u8;
+                let all_except_letters3 = 0x7Bu8..=0x7Eu8;
+                // concate all ranges into one vec
+                let all_except_letters = all_except_letters1.chain(all_except_letters2).chain(all_except_letters3);
+                for c in all_except_letters {
+                    let ch = c as char;
+                    nfa.add_transition(nfa.start_state.clone(), Transition::Char(ch), accept_state.clone());
+                }
+                nfa.add_transition(nfa.start_state.clone(), Transition::Char(0x09 as char), accept_state.clone()); // add Tab
+            }
+            'd' => {
+                let char_vec = 0x30u8..=0x39;
+                nfa.add_transition_ch_list(char_vec, accept_state.clone());
+            }
+            'D' => {
+                let char_vec = 0x20u8..=0x2Fu8;
+                nfa.add_transition_ch_list(char_vec, accept_state.clone());
+                let char_vec = 0x3Au8..=0x7Eu8;
+                nfa.add_transition_ch_list(char_vec, accept_state.clone());
+            }
+            'w' => {
+                let whitespace_chars = 0x0009u8..=0x000Du8;
+                let space = 0x20u8..=0x20u8;
+                let combined_chars = whitespace_chars.chain(space);
+                for c in combined_chars {
+                    let ch = c as char;
+                    nfa.add_transition(nfa.start_state.clone(), Transition::Char(ch), accept_state.clone());
+                }
+
+            }
+            'W' => {
+                let all_chars = 0x20u8..=0x7Eu8;
+                let whitespace_chars = 0x0009u8..=0x000Du8;
+                let space = 0x20u8..=0x20u8;
+                let combined_chars = all_chars.filter(|c| !whitespace_chars.contains(c) && !space.contains(c));
+                for c in combined_chars {
+                    let ch = c as char;
+                    nfa.add_transition(nfa.start_state.clone(), Transition::Char(ch), accept_state.clone());
+                }
+            }
+            _ => (),
+        }
+        nfa
+    }
+    
     fn from_concatenation(nfas: Vec<NFA>) -> Self {
         let mut nfa = NFA::new();
         let mut prev_accept_states: Vec<State> = Vec::new();
@@ -204,8 +272,8 @@ impl NFA {
         // remove all repetitive transitions
         for state in &nfa.states {
             if let Some(transition) = nfa.transitions.get_mut(state) {
-                let mut seen: HashSet<State> = HashSet::new();
-                transition.retain(|(_, next_state)| seen.insert(next_state.clone()));
+                let mut seen: HashSet<(Transition, State)> = HashSet::new();
+                transition.retain(|(transition_char, next_state)| seen.insert((transition_char.clone(), next_state.clone())));
             }
         }
 
@@ -249,7 +317,18 @@ impl NFA {
                     }
                 }
                 "Literal" => {
-                    NFA::from_regex(&children[0])
+                    if children.len() == 1 {
+                        NFA::from_regex(&children[0])
+                    } else { // special characters or character classes
+                        let character_class = vec!['s', 'S', 'd', 'D', 'w', 'W'];
+                        let c = children[1].unwrap_terminal();
+                        if character_class.contains(&c) {
+                            NFA::from_char_class(c)
+                        }
+                        else{
+                            NFA::from_char(c)
+                        }
+                    }
                 }
                 _ => // print out sym
                 panic!("Invalid non-terminal {}", sym),
@@ -264,31 +343,6 @@ impl NFA {
         println!("Start state: {:?}", self.start_state);
         println!("Accept states: {:?}", self.accept_states);
     }
-
-    pub fn check_str2(&self, input_str: &str) -> bool {
-        let mut current_states: HashSet<State> = HashSet::new();
-        current_states.insert(self.start_state.clone());
-        for c in input_str.chars() {
-            let mut next_states: HashSet<State> = HashSet::new();
-            for state in current_states {
-                if let Some(transitions) = self.transitions.get(&state) {
-                    for (transition, next_state) in transitions {
-                        match transition {
-                            Transition::Char(c1) => {
-                                if c == *c1 {
-                                    next_states.insert(next_state.clone());
-                                }
-                            }
-                            _ => (),
-                        }
-                    }
-                }
-            }
-            current_states = next_states;
-        }
-        current_states.iter().any(|state| self.accept_states.contains(state))
-    }
-
     
     pub fn check_str_princeton(&self, input_str: &str) -> Vec<String> {
         let mut cur_states: HashSet<State> = HashSet::new();
@@ -355,49 +409,6 @@ impl NFA {
         }
         matched_strs
     }
-
-  
-    pub fn check_str(&self, input_str: &str) -> (bool, String) {
-        let mut current_states: HashSet<State> = HashSet::new();
-        current_states.insert(self.start_state.clone());
-        let mut matched_str = String::new();
-
-        for c in input_str.chars() {
-            let mut next_states: HashSet<State> = HashSet::new();
-            let mut found_accept = false;
-
-            for state in &current_states {
-                if let Some(transitions) = self.transitions.get(state) {
-                    for (transition, next_state) in transitions {
-                        match transition {
-                            Transition::Char(c1) if *c1 == c => {
-                                next_states.insert(next_state.clone());
-                                if self.accept_states.contains(next_state) {
-                                    found_accept = true;
-                                    matched_str.push(c);
-                                    return (true, matched_str);
-                                }
-                            }
-                            _ => (),
-                        }
-                    }
-                }
-            }
-
-            if !next_states.is_empty() {
-                matched_str.push(c);
-            }
-
-            current_states = next_states;
-
-            // If no next states are found, stop the loop
-            if current_states.is_empty() {
-                break;
-            }
-        }
-
-        (false, matched_str) // Return false with the substring processed so far (may not be fully matched)
-    }
         
 }
 
@@ -417,12 +428,12 @@ impl Clone for NFA {
 pub fn nfa_from_reg(regex: &str) -> NFA {
     let cfg = cfg_for_regular_expression();
     let ast = cfg.parse(regex).unwrap().collapse();
-    NFA::from_regex(&ast)
+    let nfa = NFA::from_regex(&ast);
+    NFA::epsilon_close(nfa)
 }
 
 #[cfg(test)]
 mod test {
-    use crate::nfa;
 
     use super::*;
     #[test]
@@ -433,7 +444,7 @@ mod test {
         nfa.add_state();
         nfa.add_transition(State {id: 0}, Transition::Char('a'), State {id: 1});
         let nfa = nfa.modify_state_id(5);
-        // nfa.debug_helper();
+        nfa.debug_helper();
         println!("\n");
     }
 
@@ -441,7 +452,7 @@ mod test {
     fn test_from_char() {
         let nfa = NFA::from_char('a');
         println!("Test from char");
-        // nfa.debug_helper();
+        nfa.debug_helper();
         println!("\n");
     }
 
@@ -450,7 +461,7 @@ mod test {
     fn test_single_char_nfa() {
         let nfa = NFA::from_char('a');
         println!("Test single char NFA");
-        // nfa.debug_helper();
+        nfa.debug_helper();
         println!("\n");
     }
 
@@ -511,39 +522,31 @@ mod test {
     }
 
     #[test]
-    fn test_check_str_basic() {
-        println!("Test check string");
-        let nfa = NFA::from_char('a');
-        assert!(nfa.check_str("a").0);
-        assert!(!nfa.check_str("b").0);
-        assert!(nfa.check_str("ab").0);
+    fn test_digit() {
+        println!("Test Digit Class");
+        let regex = "\\dab";
+        let cfg = cfg_for_regular_expression();
+        let ast = cfg.parse(regex).unwrap().collapse();
+        println!("{:#?}", PrettyPrint(&ast));
+        let nfa = nfa_from_reg("\\dab");
+        nfa.debug_helper();
+        print!("{:?}", nfa.check_str_princeton("abcabf"));
     }
 
-    // #[test]
-    // fn test_check_return_str() {
-    //     println!("Test check string return string");
-    //     let nfa = nfa_from_reg("ab|c");
-    //     let nfa = NFA::epsilon_close(nfa);
-    //     let result = nfa.check_str_princeton("ab");
-    //     println!("{:?}\n", result);
-    //     let result = nfa.check_str_princeton("dab");
-    //     println!("{:?}", result);
 
-        
-    //     // assert!(!nfa.check_str2("b"));
-    //     // assert!(nfa.check_str2("c"));
-    // }
-    
-    // #[test]
-    // fn test_check_bool() {
-    //     println!("Test check string return bool");
-    //     let nfa = nfa_from_reg("ab|c");
-    //     let nfa = NFA::epsilon_close(nfa);
-    //     assert!(nfa.check_str_princeton("ab"));
-    //     assert!(nfa.check_str_princeton("dab"));
-    //     assert!(nfa.check_str_princeton("gjgjhfc"));
-    //     assert!(nfa.check_str_princeton("gjgcjhf"));
-    // }
+    #[test]
+    fn test_digit_2() {
+        println!("Test Digit Class");
+        let regex = "\\d";
+        let cfg = cfg_for_regular_expression();
+        let ast = cfg.parse(regex).unwrap().collapse();
+        println!("{:#?}", PrettyPrint(&ast));
+        let nfa = nfa_from_reg(regex);
+        nfa.debug_helper();
+        let nfa = NFA::epsilon_close(nfa);
+        nfa.debug_helper();
+        print!("{:?}", nfa.check_str_princeton("d12345"));
+    }
 
     #[test]
     fn test_check_string_1() {
@@ -566,6 +569,16 @@ mod test {
         print!("{:?}", nfa.check_str_princeton("abab"));
     }
 
+
+    #[test]
+    fn test_check_string_3() {
+        println!("Test check string return string vec 3");
+        let nfa = nfa_from_reg("ab|c");
+        let nfa = NFA::epsilon_close(nfa);
+        println!("{:?}", nfa.check_str_princeton("ab"));
+        println!("{:?}", nfa.check_str_princeton("cab"));
+        println!("{:?}", nfa.check_str_princeton("jghfhjfckhuieabkc"));
+    }
 
     #[test]
     fn test_epsilon_closure() {
@@ -595,75 +608,6 @@ mod test {
         nfa.debug_helper();
     }
 
-    // #[test]
-    // fn test_nfa_from_regex() {
-    //     let regex = "a | b";
-    //     let cfg = cfg_for_regular_expression();
-    //     let ast = cfg.parse(regex).unwrap().collapse();
+    
 
-    //     println!("{:#?}", PrettyPrint(&cfg.parse(regex).unwrap()));
-
-    //     println!("{:#?}", PrettyPrint(&ast));
-
-    //     let nfa = NFA::from_regex(&ast);
-    //     nfa.debug_helper();
-
-    //     println!("After epsilon closure:");
-
-    //     let nfa = NFA::epsilon_close(nfa);
-    //     nfa.debug_helper();
-
-    // }
-
-    // #[test]
-    // fn test_from_union_empty() {
-    //     let nfas = Vec::new();
-    //     let nfa = NFA::from_union(nfas);
-    //     nfa.debug_helper();
-
-    //     assert_eq!(nfa.states.len(), 1); // Only the accept state should be present
-    //     assert_eq!(nfa.accept_states.len(), 1);
-    //     assert!(nfa.transitions.is_empty());
-    // }
-
-    // #[test]
-    // fn test_from_union_single_nfa() {
-    //     let mut single_nfa = NFA::new();
-    //     let start_state = single_nfa.add_state();
-    //     single_nfa.start_state = start_state.clone();
-    //     single_nfa.accept_states.insert(start_state.clone());
-
-    //     let nfas = vec![single_nfa.clone()];
-    //     let nfa = NFA::from_union(nfas);
-
-    //     assert_eq!(nfa.states.len(), 2); // Start state + accept state
-    //     assert_eq!(nfa.accept_states.len(), 1);
-    //     assert!(nfa.transitions.contains_key(&start_state));
-    //     let transitions = nfa.transitions.get(&start_state).unwrap();
-    //     assert_eq!(transitions.len(), 1);
-    //     assert_eq!(transitions[0].0, Transition::Epsilon);
-    // }
-
-    // #[test]
-    // fn test_from_union_multiple_nfas() {
-    //     let mut nfa1 = NFA::new();
-    //     let start1 = nfa1.add_state();
-    //     nfa1.start_state = start1.clone();
-    //     nfa1.accept_states.insert(start1.clone());
-
-    //     let mut nfa2 = NFA::new();
-    //     let start2 = nfa2.add_state();
-    //     nfa2.start_state = start2.clone();
-    //     nfa2.accept_states.insert(start2.clone());
-
-    //     let nfas = vec![nfa1, nfa2];
-    //     let nfa = NFA::from_union(nfas);
-
-    //     assert_eq!(nfa.states.len(), 3); // Two start states + one accept state
-    //     assert_eq!(nfa.accept_states.len(), 1);
-    //     assert!(nfa.transitions.contains_key(&start1));
-    //     assert!(nfa.transitions.contains_key(&start2));
-    //     assert_eq!(nfa.transitions.get(&start1).unwrap().len(), 1);
-    //     assert_eq!(nfa.transitions.get(&start2).unwrap().len(), 1);
-    // }
 }

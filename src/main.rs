@@ -5,6 +5,7 @@ mod nfa;
 use crate::nfa::NFA;
 use crate::earley_parse::CFG;
 use crate::cfg::cfg_for_regular_expression;
+use std::collections::HashSet;
 use std::env;
 use std::error::Error;
 use std::fmt::Result;
@@ -26,8 +27,10 @@ fn grep(regex: &str, filename: &str)
         let line = line?;
         // start from any index in the line
         let output_strs = nfa.check_str_princeton(&line);
+        // change it to set
+        let output_strs: HashSet<String> = output_strs.into_iter().collect();
         for output_str in output_strs {
-            println!("{}:{}", index, output_str);
+            println!("{}:{}", index + 1, output_str);
         }
     }
 

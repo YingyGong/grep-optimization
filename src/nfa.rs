@@ -400,8 +400,10 @@ impl NFA {
             for state in &cur_states {
                 if self.accept_states.contains(&state) {
                     if let Some(start_positions) = start_positions.get(&state) {
+                        // turn start_positions into a set
+                        let start_positions: HashSet<usize> = start_positions.iter().cloned().collect();
                         for start_pos in start_positions {
-                            matched_strs.push(input_str[*start_pos..(i+1)].to_string());
+                            matched_strs.push(input_str[start_pos..(i+1)].to_string());
                         }
                     }
                 }

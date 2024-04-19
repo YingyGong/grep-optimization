@@ -61,8 +61,8 @@ fn main() {
 
     let regex = &args[1];
     let input_file: &String = &args[2];
-    let show_line_numbers = args.iter().any(|arg| arg == "-line-number");
-    let show_only_matching = args.iter().any(|arg| arg == "-only-matching");
+    let show_line_numbers = args.iter().any(|arg| arg == "line-number");
+    let show_only_matching = args.iter().any(|arg| arg == "only-matching");
 
 
     match grep(regex, input_file, show_only_matching, show_line_numbers) {

@@ -43,6 +43,7 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
         }
         if line_number && output_strs.len() > 0 {
             println!("{}:{}", index + 1, line);
+            continue;
         }
         if output_strs.len() > 0 {
             println!("{}", line);

@@ -29,8 +29,11 @@ fn grep(regex: &str, filename: &str)
         let output_strs = nfa.check_str_princeton(&line);
         // change it to set
         let output_strs: HashSet<String> = output_strs.into_iter().collect();
-        for output_str in output_strs {
-            println!("{}:{}", index + 1, output_str);
+        // for output_str in output_strs {
+        //     println!("{}:{}", index + 1, output_str);
+        // }
+        if output_strs.len() > 0 {
+            println!("{}:{}", index + 1, line);
         }
     }
 
@@ -39,7 +42,7 @@ fn grep(regex: &str, filename: &str)
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() != 3 {
+    if args.len() < 3 {
         eprintln!("Usage: {} <regular expression> <input_file>", args[0]);
         std::process::exit(1);
     }

@@ -3,6 +3,7 @@ mod cfg;
 mod nfa;
 mod helper;
 
+use regex::Regex;
 use crate::nfa::NFA;
 use crate::earley_parse::CFG;
 use crate::cfg::cfg_for_regular_expression;
@@ -53,7 +54,7 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
     Ok(())
 }
 
-fn main() {
+fn main2() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 3 {
         eprintln!("Usage: {} <regular expression> <input_file>", args[0]);
@@ -71,6 +72,31 @@ fn main() {
         Err(e) => eprintln!("Error: {}", e),
     }
 
+}
+
+// use regex::Regex as a banchmark test
+fn main() {
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 3 {
+        eprintln!("Usage: {} <regular expression> <input_file>", args[0]);
+        std::process::exit(1);
+    }
+    let regex = &args[1];
+    let input_file: &String = &args[2];
+
+    let re = Regex::new(regex).unwrap();
+    let file = File::open(input_file).unwrap();
+    let reader = BufReader::new(file);
+
+    for (index, line) in reader.lines().enumerate() {
+        let line = line.unwrap();
+        let output_strs: Vec<String> = re.find_iter(&line).map(|m| m.as_str().to_string()).collect();
+        if output_strs.len() > 0 {
+            for output_str in output_strs {
+                println!("{}:{}", index + 1, output_str);
+            }
+        }
+    }
 }
 
 #[cfg(test)]

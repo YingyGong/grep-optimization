@@ -4,66 +4,6 @@ use crate::earley_parse::PrettyPrint;
 pub use crate::earley_parse::nt;
 pub use crate::earley_parse::tr;
 
-pub fn cfg_for_regular_expression2() -> CFG {
-    let mut cfg = CFG::new("RE");
-
-    // base case
-    cfg.add_rule("RE", vec![nt("Union")]);
-
-    // union
-    cfg.add_rule("Union", vec![nt("Union"), tr('|'), nt("Concat")]);
-    cfg.add_rule("Union", vec![]);
-
-    // concatenation 
-    cfg.add_rule("Concat", vec![nt("Concat"), nt("Term")]);
-    cfg.add_rule("Concat", vec![]);
-
-    // Three Repeat rules
-    // Kleene star
-    cfg.add_rule("Term", vec![nt("Term"), tr('*')]);
-
-    // plus
-    cfg.add_rule("Term", vec![nt("Term"), tr('+')]);
-
-    // question mark
-    cfg.add_rule("Term", vec![nt("Term"), tr('?')]);
-    
-    // cfg.add_rule("Repeat", vec![nt("Term")]);
-
-
-    // parentheses
-    cfg.add_rule("Term", vec![tr('('), nt("Union"), tr(')')]);
-    cfg.add_rule("Term", vec![nt("Literal")]);
-
-
-    // Tab (0x09) and all characters between space (0x20) and tilde (0x7E), 
-    // except { |, *, (, ), ., +, ?, \} are regular expressions (literals).
-    for c in 0x20u8..=0x7E {
-        let ch = c as char;
-        if !"{|*().+?\\}".contains(ch) {
-            cfg.add_rule("Literal", vec![tr(ch)])
-        }
-    }
-
-    // escaped special characters
-    for &c in &['|', '*', '(', ')', '.', '+', '?', '\\'] {
-        cfg.add_rule("Literal", vec![tr('\\'), tr(c)]);
-    }
-
-    // dot (any character)
-    cfg.add_rule("Literal", vec![tr('.')]);
-
-    // character classes
-    cfg.add_rule("Literal", vec![tr('\\'), tr('s')]); // whitespace
-    cfg.add_rule("Literal", vec![tr('\\'), tr('S')]); // non-whitespace
-    cfg.add_rule("Literal", vec![tr('\\'), tr('d')]); // digit
-    cfg.add_rule("Literal", vec![tr('\\'), tr('D')]); // non-digit
-    cfg.add_rule("Literal", vec![tr('\\'), tr('w')]); // word character (alphanumeric + underscore)
-    cfg.add_rule("Literal", vec![tr('\\'), tr('W')]); // non-word character
-
-    cfg
-}
-
 // left associative cfg
 pub fn cfg_for_regular_expression() -> CFG {
     let mut cfg = CFG::new("RE");
@@ -268,14 +208,20 @@ pub fn check_plus_sign(s: &str) -> (String, String) {
     let mut iter = s.chars();
     let mut before_plus = String::new();
     let mut remainder = String::new();
+    let mut last_char: Option<char> = None;
     loop {
         match iter.next() {
             Some('+') => {
-                before_plus.push('+');
-                break;
+                if last_char == Some('\\') {
+                    before_plus.push('+');
+                } else {
+                    before_plus.push('+');
+                    break;
+                }
             }
             Some(c) => {
                 before_plus.push(c);
+                last_char = Some(c);
             }
             None => {
                 break;
@@ -291,6 +237,7 @@ pub fn check_plus_sign(s: &str) -> (String, String) {
 pub fn prefix_and_remainder_extract_after_plus(s: &str) -> (String, String) {
     let (before_plus, after_plus) = check_plus_sign(s);
     let (prefix, remainder) = prefix_and_remainder_extract(&cfg_for_regular_expression().parse(&before_plus).unwrap().collapse());
+    let remainder = format!("{}{}", remainder, after_plus);
     (prefix, remainder)
 }
 
@@ -395,4 +342,20 @@ mod test {
         println!("{} and {}", prefix, rest);
     }
 
+    #[test]
+    fn test_prefix_and_remainder_extract_after_plus() {
+        let mut r = String::new();
+        // for c in 0x20u8..=0x80 {
+        //     let ch = c as char;
+        //     if !"{|*()+?\\.}".contains(ch) {
+        //         r.push(c as char);
+        //     }
+        // }
+        for &c in &['|', '*', '(', ')', '+', '?', '\\', '{', '}', '.'] {
+            r.push('\\');
+            r.push(c );
+        }
+        let (prefix, remainder) = prefix_and_remainder_extract_after_plus(&r);
+        println!("{} and {}", prefix, remainder);
+    }
 }

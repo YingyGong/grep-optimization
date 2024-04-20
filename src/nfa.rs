@@ -426,18 +426,23 @@ impl NFA {
         let mut cur_states: HashSet<State> = HashSet::new();
         let mut start_positions: HashMap<State, Vec<usize>> = HashMap::new();
         cur_states.insert(self.start_state.clone());
-        for idx in starting_idx {
-            start_positions.insert(self.start_state.clone(), vec![idx]);
+        for idx in &starting_idx {
+            start_positions.insert(self.start_state.clone(), vec![*idx]);
         }
 
         // strings to return
         let mut matched_strs: Vec<String> = Vec::new();
 
-        for (i, c) in input_str.char_indices() {
+        // only match from starting idx
+            
+        let min_idx = *starting_idx.iter().min().unwrap_or(&0);
+        for (i, c) in input_str.char_indices().skip_while(|(index, _)| *index < min_idx) {
             let mut next_states: HashSet<State> = HashSet::new();
-            next_states.insert(self.start_state.clone());
             let mut next_positions: HashMap<State, Vec<usize>> = HashMap::new();
-            next_positions.insert(self.start_state.clone(), vec![i+1]);
+            if starting_idx.contains(&i) {
+                next_positions.insert(self.start_state.clone(), vec![i+1]);
+                next_states.insert(self.start_state.clone());
+            }
 
             // for all possible current states
             for state in &cur_states {
@@ -450,11 +455,8 @@ impl NFA {
                                 // get the starting positions of the current state
                                 // if the next state is not in the hashmap, add the starting position of the current state
                                 if !next_positions.contains_key(next_state) {
-                                    if let Some(start_position) = start_positions.get(state) {
-                                        next_positions.insert(next_state.clone(), start_position.clone());
-                                    } else {
-                                        next_positions.insert(next_state.clone(), vec![i+1]);
-                                    }
+                                    let (start_position) = start_positions.get(state);
+                                    next_positions.insert(next_state.clone(), start_position.unwrap().clone());
                                 }
                                 else {
                                     // if the next state is in the hashmap, add the starting positions of the current state
@@ -475,7 +477,7 @@ impl NFA {
             }
             cur_states = next_states;
             start_positions = next_positions;
-            
+
             // check any matched
             for state in &cur_states {
                 if self.accept_states.contains(&state) {
@@ -491,6 +493,7 @@ impl NFA {
                 }
             }
         }
+
         matched_strs
     }
         

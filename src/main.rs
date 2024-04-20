@@ -78,13 +78,22 @@ mod tests {
     use super::*;
     #[test]
     fn test_grep() {
-        let regex = "Caltech|California";
-        let filename = "test.txt";
+        let mut regex_vec: Vec<String>= Vec::new();
+        let filename = "./test/file3.txt";
         let only_matching = true;
         let line_number = true;
-        match grep(regex, filename, only_matching, line_number) {
-            Ok(()) => (),
-            Err(e) => eprintln!("Error: {}", e),
+
+        regex_vec.push("foo(d|l)".to_string());
+        regex_vec.push("abcdef".to_string());
+        regex_vec.push("c(ab)*".to_string());
+        regex_vec.push("ab*".to_string());
+
+        for regex in regex_vec {
+            println!("test regex: {}", regex);
+            match grep(&regex, filename, only_matching, line_number) {
+                Ok(()) => (),
+                Err(e) => eprintln!("Error: {}", e),
+            }
         }
     }
 }

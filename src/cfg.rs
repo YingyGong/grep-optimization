@@ -358,4 +358,15 @@ mod test {
         let (prefix, remainder) = prefix_and_remainder_extract_after_plus(&r);
         println!("{} and {}", prefix, remainder);
     }
+
+    #[test]
+    fn test_kleene_star_prefix() {
+        let cfg = cfg_for_regular_expression();
+        let result = cfg.parse(r"(ab)*");
+        assert!(result.is_some());
+        let tree = result.unwrap().collapse();
+        println!("{:#?}", PrettyPrint(&tree));
+        let (prefix, rest) = prefix_and_remainder_extract(&tree);
+        println!("{} and {}", prefix, rest);
+    }
 }

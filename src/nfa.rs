@@ -437,11 +437,14 @@ impl NFA {
             
         let min_idx = *starting_idx.iter().min().unwrap_or(&0);
         for (i, c) in input_str.char_indices().skip_while(|(index, _)| *index < min_idx) {
+            
             let mut next_states: HashSet<State> = HashSet::new();
+
+            // this state can be reached by a vector of indexes
             let mut next_positions: HashMap<State, Vec<usize>> = HashMap::new();
-            if starting_idx.contains(&(i+1)) {
-                next_positions.insert(self.start_state.clone(), vec![i+1]);
-                next_states.insert(self.start_state.clone());
+            if starting_idx.contains(&(i)) {
+                next_positions.insert(self.start_state.clone(), vec![i]);
+                cur_states.insert(self.start_state.clone());
             }
 
             // for all possible current states
@@ -458,7 +461,7 @@ impl NFA {
                                     if let Some(start_position) = start_positions.get(state) {
                                         next_positions.insert(next_state.clone(), start_position.clone());
                                     } else {
-                                        next_positions.insert(next_state.clone(), vec![i+1]);
+                                        next_positions.insert(next_state.clone(), vec![i]);
                                     }
                                 }
                                 else {
@@ -482,21 +485,24 @@ impl NFA {
             start_positions = next_positions;
 
             // check any matched
-            for state in &cur_states {
-                if self.accept_states.contains(&state) {
-                    if let Some(start_positions) = start_positions.get_mut(&state) {
-                        // sort the start positions in ascending order
-                        start_positions.sort();
-                        // turn start_positions into a set
-                        let start_positions: HashSet<usize> = start_positions.iter().cloned().collect();
-                        for start_pos in start_positions {
+            for accept_state in &self.accept_states {
+                if let Some(start_positions) = start_positions.get_mut(accept_state) {
+                    println!("Accept_stae {:?}, Start positions: {:?} and current idx {}", accept_state, start_positions, i);
+                    // sort the start positions in ascending order
+                    start_positions.sort();
+                    // turn start_positions into a set
+                    let start_positions: HashSet<usize> = start_positions.iter().cloned().collect();
+                    for start_pos in start_positions {
+                        if start_pos == i && (&self.start_state == accept_state) {
+                            matched_strs.push("".to_string());
+                        }
+                        else {
                             matched_strs.push(input_str[start_pos..(i+1)].to_string());
                         }
                     }
                 }
             }
         }
-
         matched_strs
     }
         
@@ -663,6 +669,17 @@ mod test {
         print!("{:?}", nfa.check_str_princeton("abab"));
     }
 
+    #[test]
+    fn test_check_string_kleen() {
+        println!("Test check string return string vec kleen");
+        let nfa = nfa_from_reg("(ab)*");
+        let nfa = NFA::epsilon_close(nfa);
+        nfa.debug_helper();
+        println!("");
+        print!("{:?}", nfa.check_str_princeton("a"));
+        print!("{:?}", nfa.check_str_princeton("ab"));
+        print!("{:?}", nfa.check_str_princeton("cabab"));
+    }
 
     #[test]
     fn test_check_string_3() {

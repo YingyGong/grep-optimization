@@ -114,4 +114,37 @@ mod tests {
             println!("{}", output_str);
         }
     }
+
+    #[test]
+    fn test_start_position_repeat() {
+        let regex = "(ab)*";
+        let line = "ababab";
+        let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
+        let mut start_positions = vec![]; // the ending position of the prefix in the line
+
+        // find all the prefixes in the line
+        line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
+
+        // print all the start positions
+        println!("start_positions: {:?}", start_positions);
+    }
+
+    #[test]
+    fn test_helper_foo() {
+        let regex = "foo(d|l)";
+        let line = "food fool";
+        let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
+        let mut start_positions = vec![]; // the ending position of the prefix in the line
+
+        // find all the prefixes in the line
+        line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
+
+        // print all the start positions
+        println!("start_positions: {:?}", start_positions);
+        
+        let output_strs = check_str_prefix_extraction(regex, line);
+        for output_str in output_strs {
+            println!("{}", output_str);
+        }
+    }
 }

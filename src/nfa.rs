@@ -345,7 +345,7 @@ impl NFA {
         }
     }
 
-    fn debug_helper(&self) {
+    pub fn debug_helper(&self) {
         println!("States: {:?}", self.states);
         println!("Transitions: {:?}", self.transitions);
         println!("Start state: {:?}", self.start_state);
@@ -426,8 +426,8 @@ impl NFA {
         let mut cur_states: HashSet<State> = HashSet::new();
         let mut start_positions: HashMap<State, Vec<usize>> = HashMap::new();
         cur_states.insert(self.start_state.clone());
-        for idx in &starting_idx {
-            start_positions.insert(self.start_state.clone(), vec![*idx]);
+        if !starting_idx.is_empty() {
+            start_positions.insert(self.start_state.clone(), vec![starting_idx[0]]);
         }
 
         // strings to return
@@ -439,7 +439,7 @@ impl NFA {
         for (i, c) in input_str.char_indices().skip_while(|(index, _)| *index < min_idx) {
             let mut next_states: HashSet<State> = HashSet::new();
             let mut next_positions: HashMap<State, Vec<usize>> = HashMap::new();
-            if starting_idx.contains(&i) {
+            if starting_idx.contains(&(i+1)) {
                 next_positions.insert(self.start_state.clone(), vec![i+1]);
                 next_states.insert(self.start_state.clone());
             }
@@ -455,8 +455,11 @@ impl NFA {
                                 // get the starting positions of the current state
                                 // if the next state is not in the hashmap, add the starting position of the current state
                                 if !next_positions.contains_key(next_state) {
-                                    let (start_position) = start_positions.get(state);
-                                    next_positions.insert(next_state.clone(), start_position.unwrap().clone());
+                                    if let Some(start_position) = start_positions.get(state) {
+                                        next_positions.insert(next_state.clone(), start_position.clone());
+                                    } else {
+                                        next_positions.insert(next_state.clone(), vec![i+1]);
+                                    }
                                 }
                                 else {
                                     // if the next state is in the hashmap, add the starting positions of the current state

@@ -16,27 +16,27 @@ use std::io::{self, BufReader, BufRead};
 fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool) 
 -> std::io::Result<()> 
 {   // without prefix extraction
-    let cfg = cfg_for_regular_expression();
-    let ast = cfg.parse(regex).unwrap().collapse();
-    let nfa = NFA::from_regex(&ast);
-    let nfa = NFA::epsilon_close(nfa);
+    // let cfg = cfg_for_regular_expression();
+    // let ast = cfg.parse(regex).unwrap().collapse();
+    // let nfa = NFA::from_regex(&ast);
+    // let nfa = NFA::epsilon_close(nfa);
 
     let file = File::open(filename)?;
     let reader = BufReader::new(file);
 
     for (index, line) in reader.lines().enumerate() {
-        // let line = line?;
-        // // start from any index in the line
-        // let output_strs = helper::check_str_prefix_extraction(regex, &line);
-        // // change it to set
-        // let output_strs: HashSet<String> = output_strs.into_iter().collect();
-
-        
         let line = line?;
         // start from any index in the line
-        let output_strs = nfa.check_str_princeton(&line);
+        let output_strs = helper::check_str_prefix_extraction(regex, &line);
         // change it to set
         let output_strs: HashSet<String> = output_strs.into_iter().collect();
+
+        
+        // let line = line?;
+        // // start from any index in the line
+        // let output_strs = nfa.check_str_princeton(&line);
+        // // change it to set
+        // let output_strs: HashSet<String> = output_strs.into_iter().collect();
 
         if only_matching && line_number {
             for output_str in output_strs {

@@ -99,7 +99,7 @@ pub fn cfg_for_regular_expression() -> CFG {
 
     // Tab (0x09) and all characters between space (0x20) and tilde (0x7E), 
     // except { |, *, (, ), ., +, ?, \} are regular expressions (literals).
-    for c in 0x20u8..=0x7E {
+    for c in 0x20u8..=0x80 {
         let ch = c as char;
         if !"{|*()+?\\.}".contains(ch) {
             cfg.add_rule("Literal", vec![tr(ch)])

@@ -29,7 +29,7 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
         let line = line?;
         // start from any index in the line
         let output_strs = helper::check_str_prefix_extraction(regex, &line);
-        
+
         if only_matching && line_number {
             for output_str in output_strs {
                 println!("{}:{}", index + 1, output_str);

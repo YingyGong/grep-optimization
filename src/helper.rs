@@ -11,16 +11,25 @@ pub fn check_str_prefix_extraction(regex: &str, line: &str) -> Vec<String> {
     // find all the prefixes in the line
     line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
 
-    // create a new NFA from the rest
-    let nfa = nfa::nfa_from_reg(&rest);
-
-    // check the rest of the line
-    let output_strs = nfa.check_str_with_start_index(line, start_positions);
-
-    // add prefix to the output strings
     let mut output_strs_with_prefix = vec![];
-    for output_str in output_strs {
-        output_strs_with_prefix.push(format!("{}{}", prefix, output_str));
+
+    if rest != "" {
+        // create a new NFA from the rest
+        let nfa = nfa::nfa_from_reg(&rest);
+
+        // check the rest of the line
+        let output_strs = nfa.check_str_with_start_index(line, start_positions);
+
+        // add prefix to the output strings
+        for output_str in output_strs {
+            output_strs_with_prefix.push(format!("{}{}", prefix, output_str));
+        }
+
+    }
+    else {
+        for _ in start_positions {
+            output_strs_with_prefix.push(format!("{}", prefix));
+        }
     }
     output_strs_with_prefix
 }

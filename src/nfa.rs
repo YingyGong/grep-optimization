@@ -701,7 +701,4 @@ mod test {
         let nfa = NFA::epsilon_close(nfa);
         nfa.debug_helper();
     }
-
-    
-
 }

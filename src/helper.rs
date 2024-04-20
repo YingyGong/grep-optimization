@@ -13,6 +13,10 @@ pub fn check_str_prefix_extraction(regex: &str, line: &str) -> Vec<String> {
 
     let mut output_strs_with_prefix = vec![];
 
+    if start_positions.len() == 0 {
+        return output_strs_with_prefix;
+    }
+
     if rest != "" {
         // create a new NFA from the rest
         let nfa = nfa::nfa_from_reg(&rest);

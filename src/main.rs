@@ -27,7 +27,6 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
 
     for (index, line) in reader.lines().enumerate() {
         let line = line?;
-        // start from any index in the line
         let output_strs = helper::check_str_prefix_extraction(regex, &line);
 
         if only_matching && line_number {
@@ -72,4 +71,20 @@ fn main() {
         Err(e) => eprintln!("Error: {}", e),
     }
 
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_grep() {
+        let regex = "Caltech|California";
+        let filename = "test.txt";
+        let only_matching = true;
+        let line_number = true;
+        match grep(regex, filename, only_matching, line_number) {
+            Ok(()) => (),
+            Err(e) => eprintln!("Error: {}", e),
+        }
+    }
 }

@@ -126,6 +126,7 @@ impl ASTNode {
     }
 }
 
+
 #[derive(Debug, Clone)]
 struct EarleyState {
     lhs: NonTerminal,

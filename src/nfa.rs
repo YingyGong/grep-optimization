@@ -421,8 +421,82 @@ impl NFA {
         }
         matched_strs
     }
+
+    pub fn check_str_with_start_index(&self, input_str: &str, starting_idx: Vec<usize>) -> Vec<String> {
+        let mut cur_states: HashSet<State> = HashSet::new();
+        let mut start_positions: HashMap<State, Vec<usize>> = HashMap::new();
+        cur_states.insert(self.start_state.clone());
+        for idx in starting_idx {
+            start_positions.insert(self.start_state.clone(), vec![idx]);
+        }
+
+        // strings to return
+        let mut matched_strs: Vec<String> = Vec::new();
+
+        for (i, c) in input_str.char_indices() {
+            let mut next_states: HashSet<State> = HashSet::new();
+            next_states.insert(self.start_state.clone());
+            let mut next_positions: HashMap<State, Vec<usize>> = HashMap::new();
+            next_positions.insert(self.start_state.clone(), vec![i+1]);
+
+            // for all possible current states
+            for state in &cur_states {
+                if let Some(transitions) = self.transitions.get(state) {
+                    for (transition, next_state) in transitions {
+                        match transition {
+                            // if the character can lead to a next state by a valid transition
+                            Transition::Char(c1) if *c1 == c => {
+                                next_states.insert(next_state.clone());
+                                // get the starting positions of the current state
+                                // if the next state is not in the hashmap, add the starting position of the current state
+                                if !next_positions.contains_key(next_state) {
+                                    if let Some(start_position) = start_positions.get(state) {
+                                        next_positions.insert(next_state.clone(), start_position.clone());
+                                    } else {
+                                        next_positions.insert(next_state.clone(), vec![i+1]);
+                                    }
+                                }
+                                else {
+                                    // if the next state is in the hashmap, add the starting positions of the current state
+                                    // to the vector of starting positions of the next state
+                                    if let Some(start_position) = start_positions.get(state) {
+                                        if let Some(next_start_positions) = next_positions.get_mut(next_state) {
+                                            for start_pos in start_position {
+                                                next_start_positions.push(*start_pos);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            _ => (),
+                        }
+                    }
+                }
+            }
+            cur_states = next_states;
+            start_positions = next_positions;
+            
+            // check any matched
+            for state in &cur_states {
+                if self.accept_states.contains(&state) {
+                    if let Some(start_positions) = start_positions.get_mut(&state) {
+                        // sort the start positions in ascending order
+                        start_positions.sort();
+                        // turn start_positions into a set
+                        let start_positions: HashSet<usize> = start_positions.iter().cloned().collect();
+                        for start_pos in start_positions {
+                            matched_strs.push(input_str[start_pos..(i+1)].to_string());
+                        }
+                    }
+                }
+            }
+        }
+        matched_strs
+    }
         
 }
+
+
 
 impl Clone for NFA {
     fn clone(&self) -> Self {
@@ -443,6 +517,8 @@ pub fn nfa_from_reg(regex: &str) -> NFA {
     let nfa = NFA::from_regex(&ast);
     NFA::epsilon_close(nfa)
 }
+
+
 
 #[cfg(test)]
 mod test {

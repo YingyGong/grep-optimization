@@ -1,6 +1,7 @@
 mod earley_parse;
 mod cfg;
 mod nfa;
+mod regex;
 
 use crate::nfa::NFA;
 use crate::earley_parse::CFG;

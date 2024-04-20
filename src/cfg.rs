@@ -105,6 +105,8 @@ pub fn cfg_for_regular_expression() -> CFG {
             cfg.add_rule("Literal", vec![tr(ch)])
         }
     }
+    
+    cfg.add_rule("Literal", vec![tr(0x09u8 as char)]);
 
     // escaped special characters
     for &c in &['|', '*', '(', ')', '+', '?', '\\', '{', '}', '.'] {

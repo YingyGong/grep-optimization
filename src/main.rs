@@ -3,7 +3,7 @@ mod cfg;
 mod nfa;
 mod helper;
 
-use regex::Regex;
+// use regex::Regex;
 use crate::nfa::NFA;
 use crate::earley_parse::CFG;
 use crate::cfg::cfg_for_regular_expression;

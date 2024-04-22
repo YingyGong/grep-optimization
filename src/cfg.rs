@@ -149,19 +149,19 @@ pub fn prefix_and_remainder_extract(node: &ASTNode) -> (String, String) {
             "Concat" => {
                 let (prefix1, remainder1) = prefix_and_remainder_extract(&children[0]);
                 let (prefix2, remainder2) = prefix_and_remainder_extract(&children[1]);
-                if prefix1.is_empty() {
-                    (String::new(), format!("{}{}{}", remainder1, prefix2, remainder2))
+                if remainder1.is_empty() {
+                    (format!("{}{}", prefix1, prefix2), remainder2)
                 } else {
-                    let combined_prefix = format!("{}{}", prefix1, prefix2);
-                    let remainder = format!("{}{}", remainder1, remainder2);
-                    (combined_prefix, remainder)
+                    (prefix1, format!("{}{}{}", remainder1, prefix2, remainder2))
                 }
             },
             "Repeat" => {
                 match children[1].unwrap_terminal() {
                     '*' | '?' => (String::new(), format!("{}{}{}", prefix_and_remainder_extract(&children[0]).0, prefix_and_remainder_extract(&children[0]).1, children[1].unwrap_terminal())),
                     '+' => {
-                        prefix_and_remainder_extract(&children[0])
+                        let prefix = prefix_and_remainder_extract(&children[0]).0;
+                        let remainder = format!("{}{}*", prefix_and_remainder_extract(&children[0]).0, prefix_and_remainder_extract(&children[0]).1);
+                        (prefix, remainder)
                     },
                     _ => panic!("Invalid repeat operator"),
                 }
@@ -367,7 +367,7 @@ mod test {
     #[test]
     fn test_kleene_star_prefix() {
         let cfg = cfg_for_regular_expression();
-        let result = cfg.parse(r"(ab)*");
+        let result = cfg.parse(r"c(ab)+fg");
         assert!(result.is_some());
         let tree = result.unwrap().collapse();
         println!("{:#?}", PrettyPrint(&tree));

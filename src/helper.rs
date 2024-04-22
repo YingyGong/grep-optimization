@@ -169,14 +169,23 @@ pub fn find_prefix_boyer_moore(p: &str, t: &str) -> Vec<usize> {
 
 
 pub fn check_str_prefix_extraction(regex: &str, line: &str) -> Vec<String> {
-    let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
+    // let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
+    let (prefix, rest) = cfg::prefix_and_remainder_extract(&cfg_for_regular_expression().parse(regex).unwrap().collapse());
 
     // find all the prefixes in the line
     let mut start_positions = find_prefix_boyer_moore(&prefix, line);
+    if prefix.is_empty() {
+        // start_positions are all index
+        for i in 0..line.len() {
+            start_positions.push(i);
+        }
+    }
     // add length of prefix to the start_positions
     for i in 0..start_positions.len() {
         start_positions[i] += prefix.len();
     } 
+
+    // println!("start_positions from boyer: {:?}", start_positions);
 
     let mut output_strs_with_prefix = vec![];
 
@@ -191,7 +200,7 @@ pub fn check_str_prefix_extraction(regex: &str, line: &str) -> Vec<String> {
 
         // check the rest of the line
         let output_strs = nfa.check_str_with_start_index(line, start_positions);
-
+        
         // add prefix to the output strings
         for output_str in output_strs {
             output_strs_with_prefix.push(format!("{}{}", prefix, output_str));
@@ -199,9 +208,7 @@ pub fn check_str_prefix_extraction(regex: &str, line: &str) -> Vec<String> {
 
     }
     else {
-        for _ in start_positions {
-            output_strs_with_prefix.push(format!("{}", prefix));
-        }
+        output_strs_with_prefix.push(prefix);
     }
     output_strs_with_prefix
 }
@@ -337,6 +344,48 @@ mod tests {
     }
 
     #[test]
+    fn test_helper_kleen_star_2() {
+        let regex = "ab+";
+        let line = "ababbabbb";
+        let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
+        println!("prefix: {}, rest: {}", prefix, rest);
+        let mut start_positions = vec![]; // the ending position of the prefix in the line
+
+        // find all the prefixes in the line
+        line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
+
+        // print all the start positions
+        println!("start_positions: {:?}", start_positions);
+        
+        let output_strs = check_str_prefix_extraction(&regex, line);
+        for output_str in output_strs {
+            println!("{}", output_str);
+        }
+    }
+
+
+    #[test]
+    fn test_helper_kleen_star_3() {
+        let regex = "b*";
+        let line = "abc";
+        let node = cfg_for_regular_expression().parse(regex).unwrap().collapse();
+        let (prefix, rest) = cfg::prefix_and_remainder_extract(&node);
+        println!("prefix: {}, rest: {}", prefix, rest);
+        let mut start_positions = vec![]; // the ending position of the prefix in the line
+
+        // find all the prefixes in the line
+        line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
+
+        // print all the start positions
+        println!("start_positions: {:?}", start_positions);
+        
+        let output_strs = check_str_prefix_extraction(&regex, line);
+        for output_str in output_strs {
+            println!("{}", output_str);
+        }
+    }
+
+    #[test]
     fn test_boyer_moore() {
         let p = "abab";
         let t = "ababababab";
@@ -422,5 +471,26 @@ mod tests {
         let t = "This is a Case for testing";
         let matches = find_prefix_boyer_moore(&p.to_lowercase(), &t.to_lowercase());
         assert_eq!(matches, [10]);
+    }
+
+    #[test]
+    fn test_order() {
+        let regex = "c(ab)*";
+        let line = "cabab";
+        let node = cfg_for_regular_expression().parse(regex).unwrap().collapse();
+        let (prefix, rest) = cfg::prefix_and_remainder_extract(&node);
+        println!("prefix: {}, rest: {}", prefix, rest);
+        let mut start_positions = vec![]; // the ending position of the prefix in the line
+
+        // find all the prefixes in the line
+        line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
+
+        // print all the start positions
+        println!("start_positions: {:?}", start_positions);
+        
+        let output_strs = check_str_prefix_extraction(&regex, line);
+        for output_str in output_strs {
+            println!("{}", output_str);
+        }
     }
 }

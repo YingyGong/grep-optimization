@@ -7,6 +7,8 @@ use crate::cfg::cfg_for_regular_expression;
 use crate::earley_parse::PrettyPrint;
 use std::iter::Filter;
 use core::ops::RangeInclusive;
+use indexmap::IndexSet;
+
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct State {
@@ -423,7 +425,7 @@ impl NFA {
         matched_strs
     }
 
-    pub fn check_str_with_start_index(&self, input_str: &str, starting_idx: Vec<usize>) -> Vec<String> {
+    pub fn check_str_with_start_index(&self, input_str: &str, starting_idx: Vec<usize>) -> IndexSet<String> {
         let mut cur_states: HashSet<State> = HashSet::new();
         let mut cur_positions: HashMap<State, Vec<usize>> = HashMap::new();
         cur_states.insert(self.start_state.clone());
@@ -432,7 +434,7 @@ impl NFA {
         }
 
         // strings to return
-        let mut matched_strs: Vec<String> = Vec::new();
+        let mut matched_strs: IndexSet<String> = IndexSet::new();
 
         // only match from starting idx
             
@@ -445,7 +447,13 @@ impl NFA {
             let mut next_positions: HashMap<State, Vec<usize>> = HashMap::new();
             if starting_idx.contains(&(i)) {
                 cur_positions.insert(self.start_state.clone(), vec![i]);
+                
                 cur_states.insert(self.start_state.clone());
+                if self.accept_states.contains(&self.start_state) {
+                    // println!("Matched string at start: ");
+
+                    matched_strs.insert("".to_string());
+                }
             }
 
             // for all possible current states
@@ -491,6 +499,7 @@ impl NFA {
             cur_states = next_states;
             cur_positions = next_positions;
 
+            let mut match_start: HashSet<usize> = HashSet::new();
             // check any matched
             for accept_state in &self.accept_states {
                 if let Some(start_positions) = cur_positions.get_mut(accept_state) {
@@ -500,20 +509,27 @@ impl NFA {
                     let start_positions: HashSet<usize> = start_positions.iter().cloned().collect();
                     for start_pos in start_positions {
                         
-                        if start_pos == i && (&self.start_state == accept_state) {
-                            matched_strs.push("".to_string());
-                        }
-                        else {
-                            matched_strs.push(input_str[start_pos..(i+1)].to_string());
-                            // println!("Accept_state {:?}, Start positions: {:?} and current idx {} with string {}", accept_state, start_pos, i, input_str[start_pos..(i+1)].to_string());
-                        }
+                        // if start_pos == i && (&self.start_state == accept_state) {
+                        //     matched_strs.insert("".to_string());
+                        // }
+                        // else {
+                        //     matched_strs.insert(input_str[start_pos..(i+1)].to_string());
+                        //     // println!("Accept_state {:?}, Start positions: {:?} and current idx {} with string {}", accept_state, start_pos, i, input_str[start_pos..(i+1)].to_string());
+                        // }
+                        match_start.insert(start_pos);
                     }
                 }
+            }
+            // sort match start
+            let mut match_start: Vec<usize> = match_start.iter().cloned().collect();
+            match_start.sort();
+            for start in match_start {
+                matched_strs.insert(input_str[start..(i+1)].to_string());
+                // println!("Matched string: {}", input_str[start..(i+1)].to_string());
             }
         }
         matched_strs
     }
-        
 }
 
 
@@ -681,6 +697,18 @@ mod test {
     fn test_check_string_kleen() {
         println!("Test check string return string vec kleen");
         let nfa = nfa_from_reg("c(ab)*");
+        let nfa = NFA::epsilon_close(nfa);
+        nfa.debug_helper();
+        println!("");
+        print!("{:?}", nfa.check_str_princeton("a"));
+        print!("{:?}", nfa.check_str_princeton("bab"));
+        print!("{:?}", nfa.check_str_princeton("cabab"));
+    }
+
+    #[test]
+    fn test_check_string_kleen_2() {
+        println!("Test check string return string vec kleen");
+        let nfa = nfa_from_reg("(b)*");
         let nfa = NFA::epsilon_close(nfa);
         nfa.debug_helper();
         println!("");

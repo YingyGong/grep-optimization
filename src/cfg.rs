@@ -240,7 +240,7 @@ pub fn check_plus_sign(s: &str) -> (String, String) {
 }
 
 pub fn prefix_and_remainder_extract_after_plus(s: &str) -> (String, String) {
-    let (mut before_plus, after_plus) = check_plus_sign(s);
+    let (before_plus, after_plus) = check_plus_sign(s);
     if before_plus.is_empty() {
         let (prefix, remainder) = prefix_and_remainder_extract(&cfg_for_regular_expression().parse(s).unwrap().collapse());
         return (prefix, remainder);
@@ -298,7 +298,7 @@ mod test {
     #[test]
     fn test_parentheses() {
         let cfg = cfg_for_regular_expression();
-        let result = cfg.parse("a(b(b|c))");
+        let result = cfg.parse("a(b|b|c)");
         assert!(result.is_some());
         println!("{:#?}", PrettyPrint(&result.unwrap().collapse()));
     }

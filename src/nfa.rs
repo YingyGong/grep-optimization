@@ -298,6 +298,7 @@ impl NFA {
                     NFA::from_concatenation(vec![left, right])
                 }
                 "Union" => {
+                    assert!(children.len() == 3);
                     let left = NFA::from_regex(&children[0]);
                     let right = NFA::from_regex(&children[2]);
                     NFA::from_union(vec![left, right])

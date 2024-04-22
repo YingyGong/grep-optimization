@@ -12,6 +12,7 @@ use std::env;
 use std::error::Error;
 use std::fmt::Result;
 use std::fs::File;
+use std::hash::Hash;
 use std::io::{self, BufReader, BufRead};
 
 fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool) 
@@ -29,6 +30,8 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
     for (index, line) in reader.lines().enumerate() {
         let line = line?;
         let output_strs = helper::check_str_prefix_extraction(regex, &line);
+        // get non-overlapping matches (set)
+        let output_strs: HashSet<String> = output_strs.into_iter().collect();
 
         if only_matching && line_number {
             for output_str in output_strs {
@@ -67,7 +70,7 @@ fn main() {
     let show_only_matching = args.iter().any(|arg| arg == "only-matching");
 
 
-    match grep(regex, input_file, false, true) {
+    match grep(regex, input_file, true, true) {
         Ok(()) => (),
         Err(e) => eprintln!("Error: {}", e),
     }

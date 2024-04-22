@@ -147,25 +147,19 @@ pub fn prefix_and_remainder_extract(node: &ASTNode) -> (String, String) {
                 (common_prefix, remainder)
             },
             "Concat" => {
-                let mut result = String::new();
-                match children[0] {
-                    ASTNode::NonTerminal { sym, .. } if sym == "Repeat" => {
-                        let (prefix1, remainder1) = prefix_and_remainder_extract(&children[0]);
-                        let (_, remainder2) = prefix_and_remainder_extract(&children[1]);
-                        (prefix1, format!("{}{}", remainder1, remainder2))
-                    },
-                    _ => {
-                        let (prefix1, remainder1) = prefix_and_remainder_extract(&children[0]);
-                        let (prefix2, remainder2) = prefix_and_remainder_extract(&children[1]);
-                        let combined_prefix = format!("{}{}", prefix1, prefix2);
-                        let remainder = format!("{}{}", remainder1, remainder2);
-                        (combined_prefix, remainder)
-                    }
+                let (prefix1, remainder1) = prefix_and_remainder_extract(&children[0]);
+                let (prefix2, remainder2) = prefix_and_remainder_extract(&children[1]);
+                if prefix1.is_empty() {
+                    (String::new(), format!("{}{}{}", remainder1, prefix2, remainder2))
+                } else {
+                    let combined_prefix = format!("{}{}", prefix1, prefix2);
+                    let remainder = format!("{}{}", remainder1, remainder2);
+                    (combined_prefix, remainder)
                 }
             },
             "Repeat" => {
                 match children[1].unwrap_terminal() {
-                    '*' | '?' => (String::new(), format!("({}){}", prefix_and_remainder_extract(&children[0]).0, children[1].unwrap_terminal())),
+                    '*' | '?' => (String::new(), format!("{}{}{}", prefix_and_remainder_extract(&children[0]).0, prefix_and_remainder_extract(&children[0]).1, children[1].unwrap_terminal())),
                     '+' => {
                         prefix_and_remainder_extract(&children[0])
                     },
@@ -178,10 +172,11 @@ pub fn prefix_and_remainder_extract(node: &ASTNode) -> (String, String) {
                 } else {
                     // skip '(' and ')'
                     let (prefix, remainder) = prefix_and_remainder_extract(&children[1]);
+                    
                     if prefix.is_empty() {
                         (prefix, format!("({})", remainder))
                     } else {
-                        (prefix, remainder)
+                        (format!("({})", prefix), remainder)
                     }
                 }
             },
@@ -373,6 +368,18 @@ mod test {
     fn test_kleene_star_prefix() {
         let cfg = cfg_for_regular_expression();
         let result = cfg.parse(r"(ab)*");
+        assert!(result.is_some());
+        let tree = result.unwrap().collapse();
+        println!("{:#?}", PrettyPrint(&tree));
+        let (prefix, rest) = prefix_and_remainder_extract(&tree);
+        println!("{} and {}", prefix, rest);
+    }
+
+    // ".*fail.*"
+    #[test]
+    fn test_dot_star() {
+        let cfg = cfg_for_regular_expression();
+        let result = cfg.parse(".*fail.*");
         assert!(result.is_some());
         let tree = result.unwrap().collapse();
         println!("{:#?}", PrettyPrint(&tree));

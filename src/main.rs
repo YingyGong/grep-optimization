@@ -109,17 +109,26 @@ mod tests {
         let only_matching = true;
         let line_number = true;
 
-        regex_vec.push("foo(d|l)".to_string());
-        regex_vec.push("abcdef".to_string());
-        regex_vec.push("c(ab)*".to_string());
-        regex_vec.push("ab*".to_string());
+        // Including different types of regex patterns
+        regex_vec.push("foo(d|l)".to_string());  // Testing grouping and alternatives
+        regex_vec.push("abcdef".to_string());    // Testing exact matches
+        regex_vec.push("c(ab)*".to_string());    // Testing repetition of groups
+        regex_vec.push("ab*".to_string());       // Testing repetition of single character
+        regex_vec.push("^begin".to_string());    // Testing start of line
+        regex_vec.push("end$".to_string());      // Testing end of line
+        regex_vec.push(".+".to_string());        // Testing match of one or more characters
+        regex_vec.push("\\d+".to_string());      // Testing digit matching
+        regex_vec.push("no\\s+match".to_string()); // Testing whitespace matching
+        regex_vec.push(".*fail.*".to_string());  // Testing 'any character' and greediness
 
-        for regex in regex_vec {
-            println!("test regex: {}", regex);
-            match grep(&regex, filename, only_matching, line_number) {
-                Ok(()) => (),
-                Err(e) => eprintln!("Error: {}", e),
+        for regex in &regex_vec {
+            println!("Testing regex: {}", regex);
+            match grep(regex, filename, only_matching, line_number) {
+                Ok(()) => println!("Success for regex: {}", regex),
+                Err(e) => eprintln!("Error for regex '{}': {}", regex, e),
             }
         }
     }
+
+
 }

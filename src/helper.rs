@@ -176,7 +176,7 @@ pub fn check_str_prefix_extraction(regex: &str, line: &str) -> Vec<String> {
     // add length of prefix to the start_positions
     for i in 0..start_positions.len() {
         start_positions[i] += prefix.len();
-    }
+    } 
 
     let mut output_strs_with_prefix = vec![];
 
@@ -342,5 +342,85 @@ mod tests {
         let t = "ababababab";
         let matches = find_prefix_boyer_moore(p, t);
         println!("matches: {:?}", matches);
+    }
+
+    #[test]
+    fn test_basic_match() {
+        let p = "test";
+        let t = "this is a test string";
+        let matches = find_prefix_boyer_moore(p, t);
+        assert_eq!(matches, [10]);
+    }
+
+    #[test]
+    fn test_no_match() {
+        let p = "hello";
+        let t = "world, this test fails";
+        let matches = find_prefix_boyer_moore(p, t);
+        assert_eq!(matches, []);
+    }
+
+    #[test]
+    fn test_overlapping_matches() {
+        let p = "ana";
+        let t = "banana";
+        let matches = find_prefix_boyer_moore(p, t);
+        assert_eq!(matches, [1, 3]);
+    }
+
+    #[test]
+    fn test_pattern_at_start() {
+        let p = "start";
+        let t = "start here";
+        let matches = find_prefix_boyer_moore(p, t);
+        assert_eq!(matches, [0]);
+    }
+
+    #[test]
+    fn test_pattern_at_end() {
+        let p = "end";
+        let t = "at the end";
+        let matches = find_prefix_boyer_moore(p, t);
+        assert_eq!(matches, [7]);
+    }
+
+    #[test]
+    fn test_full_text_match() {
+        let p = "full";
+        let t = "full";
+        let matches = find_prefix_boyer_moore(p, t);
+        assert_eq!(matches, [0]);
+    }
+
+    #[test]
+    fn test_empty_pattern() {
+        let p = "";
+        let t = "non-empty";
+        let matches = find_prefix_boyer_moore(p, t);
+        assert_eq!(matches, []);
+    }
+
+    #[test]
+    fn test_empty_text() {
+        let p = "non-empty";
+        let t = "";
+        let matches = find_prefix_boyer_moore(p, t);
+        assert_eq!(matches, []);
+    }
+
+    #[test]
+    fn test_special_characters() {
+        let p = "@!";
+        let t = "How about this?! Yes, @!";
+        let matches = find_prefix_boyer_moore(p, t);
+        assert_eq!(matches, [22]);
+    }
+
+    #[test]
+    fn test_case_insensitivity() {
+        let p = "case";
+        let t = "This is a Case for testing";
+        let matches = find_prefix_boyer_moore(&p.to_lowercase(), &t.to_lowercase());
+        assert_eq!(matches, [10]);
     }
 }

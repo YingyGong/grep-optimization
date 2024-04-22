@@ -191,7 +191,7 @@ pub fn prefix_and_remainder_extract(node: &ASTNode) -> (String, String) {
                 } else {
                     let c = children[1].unwrap_terminal();
                     if vec!['s', 'S', 'd', 'D', 'w', 'W'].contains(&c) {
-                        (String::new(),format!("{}{}", children[1].unwrap_terminal(), children[1].unwrap_terminal()))
+                        (String::new(),format!("{}{}", children[0].unwrap_terminal(), children[1].unwrap_terminal()))
                     } else {
                         (c.to_string(), String::new())
                     }

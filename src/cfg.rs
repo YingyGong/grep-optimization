@@ -165,7 +165,7 @@ pub fn prefix_and_remainder_extract(node: &ASTNode) -> (String, String) {
             },
             "Repeat" => {
                 match children[1].unwrap_terminal() {
-                    '*' | '?' => (String::new(), format!("{}{}", prefix_and_remainder_extract(&children[0]).0, children[1].unwrap_terminal())),
+                    '*' | '?' => (String::new(), format!("({}){}", prefix_and_remainder_extract(&children[0]).0, children[1].unwrap_terminal())),
                     '+' => {
                         prefix_and_remainder_extract(&children[0])
                     },
@@ -177,7 +177,12 @@ pub fn prefix_and_remainder_extract(node: &ASTNode) -> (String, String) {
                     prefix_and_remainder_extract(&children[0])
                 } else {
                     // skip '(' and ')'
-                    prefix_and_remainder_extract(&children[1])
+                    let (prefix, remainder) = prefix_and_remainder_extract(&children[1]);
+                    if prefix.is_empty() {
+                        (prefix, format!("({})", remainder))
+                    } else {
+                        (prefix, remainder)
+                    }
                 }
             },
             "Literal" => {
@@ -235,7 +240,12 @@ pub fn check_plus_sign(s: &str) -> (String, String) {
 }
 
 pub fn prefix_and_remainder_extract_after_plus(s: &str) -> (String, String) {
-    let (before_plus, after_plus) = check_plus_sign(s);
+    let (mut before_plus, after_plus) = check_plus_sign(s);
+    if before_plus.is_empty() {
+        let (prefix, remainder) = prefix_and_remainder_extract(&cfg_for_regular_expression().parse(s).unwrap().collapse());
+        return (prefix, remainder);
+    }
+    println!("{:#?}",PrettyPrint(&cfg_for_regular_expression().parse(&before_plus).unwrap().collapse()));
     let (prefix, remainder) = prefix_and_remainder_extract(&cfg_for_regular_expression().parse(&before_plus).unwrap().collapse());
     let remainder = format!("{}{}", remainder, after_plus);
     (prefix, remainder)

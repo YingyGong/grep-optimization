@@ -424,10 +424,10 @@ impl NFA {
 
     pub fn check_str_with_start_index(&self, input_str: &str, starting_idx: Vec<usize>) -> Vec<String> {
         let mut cur_states: HashSet<State> = HashSet::new();
-        let mut start_positions: HashMap<State, Vec<usize>> = HashMap::new();
+        let mut cur_positions: HashMap<State, Vec<usize>> = HashMap::new();
         cur_states.insert(self.start_state.clone());
         if !starting_idx.is_empty() {
-            start_positions.insert(self.start_state.clone(), vec![starting_idx[0]]);
+            cur_positions.insert(self.start_state.clone(), vec![starting_idx[0]]);
         }
 
         // strings to return
@@ -443,7 +443,7 @@ impl NFA {
             // this state can be reached by a vector of indexes
             let mut next_positions: HashMap<State, Vec<usize>> = HashMap::new();
             if starting_idx.contains(&(i)) {
-                next_positions.insert(self.start_state.clone(), vec![i]);
+                cur_positions.insert(self.start_state.clone(), vec![i]);
                 cur_states.insert(self.start_state.clone());
             }
 
@@ -458,16 +458,22 @@ impl NFA {
                                 // get the starting positions of the current state
                                 // if the next state is not in the hashmap, add the starting position of the current state
                                 if !next_positions.contains_key(next_state) {
-                                    if let Some(start_position) = start_positions.get(state) {
+                                    if let Some(start_position) = cur_positions.get(state) {
+                                        if start_position.contains(&0) {
+                                            // println!("i {} and state {:?} Start position {:?}",i, state, start_position);
+                                        }
                                         next_positions.insert(next_state.clone(), start_position.clone());
                                     } else {
+                                        if i == 0 {
+                                            // println!("how can it be possible");
+                                        }
                                         next_positions.insert(next_state.clone(), vec![i]);
                                     }
                                 }
                                 else {
                                     // if the next state is in the hashmap, add the starting positions of the current state
                                     // to the vector of starting positions of the next state
-                                    if let Some(start_position) = start_positions.get(state) {
+                                    if let Some(start_position) = cur_positions.get(state) {
                                         if let Some(next_start_positions) = next_positions.get_mut(next_state) {
                                             for start_pos in start_position {
                                                 next_start_positions.push(*start_pos);
@@ -482,22 +488,23 @@ impl NFA {
                 }
             }
             cur_states = next_states;
-            start_positions = next_positions;
+            cur_positions = next_positions;
 
             // check any matched
             for accept_state in &self.accept_states {
-                if let Some(start_positions) = start_positions.get_mut(accept_state) {
-                    println!("Accept_stae {:?}, Start positions: {:?} and current idx {}", accept_state, start_positions, i);
+                if let Some(start_positions) = cur_positions.get_mut(accept_state) {
                     // sort the start positions in ascending order
                     start_positions.sort();
                     // turn start_positions into a set
                     let start_positions: HashSet<usize> = start_positions.iter().cloned().collect();
                     for start_pos in start_positions {
+                        
                         if start_pos == i && (&self.start_state == accept_state) {
                             matched_strs.push("".to_string());
                         }
                         else {
                             matched_strs.push(input_str[start_pos..(i+1)].to_string());
+                            // println!("Accept_state {:?}, Start positions: {:?} and current idx {} with string {}", accept_state, start_pos, i, input_str[start_pos..(i+1)].to_string());
                         }
                     }
                 }
@@ -672,12 +679,12 @@ mod test {
     #[test]
     fn test_check_string_kleen() {
         println!("Test check string return string vec kleen");
-        let nfa = nfa_from_reg("(ab)*");
+        let nfa = nfa_from_reg("c(ab)*");
         let nfa = NFA::epsilon_close(nfa);
         nfa.debug_helper();
         println!("");
         print!("{:?}", nfa.check_str_princeton("a"));
-        print!("{:?}", nfa.check_str_princeton("ab"));
+        print!("{:?}", nfa.check_str_princeton("bab"));
         print!("{:?}", nfa.check_str_princeton("cabab"));
     }
 

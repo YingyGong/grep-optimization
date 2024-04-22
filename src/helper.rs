@@ -20,6 +20,7 @@ pub fn check_str_prefix_extraction(regex: &str, line: &str) -> Vec<String> {
     if rest != "" {
         // create a new NFA from the rest
         let nfa = nfa::nfa_from_reg(&rest);
+        nfa.debug_helper();
 
         // check the rest of the line
         let output_strs = nfa.check_str_with_start_index(line, start_positions);
@@ -143,6 +144,26 @@ mod tests {
         println!("start_positions: {:?}", start_positions);
         
         let output_strs = check_str_prefix_extraction(regex, line);
+        for output_str in output_strs {
+            println!("{}", output_str);
+        }
+    }
+
+    #[test]
+    fn test_helper_kleen_star() {
+        let regex = "(ab)*";
+        let line = "cabab";
+        let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
+        println!("prefix: {}, rest: {}", prefix, rest);
+        let mut start_positions = vec![]; // the ending position of the prefix in the line
+
+        // find all the prefixes in the line
+        line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
+
+        // print all the start positions
+        println!("start_positions: {:?}", start_positions);
+        
+        let output_strs = check_str_prefix_extraction(&regex, line);
         for output_str in output_strs {
             println!("{}", output_str);
         }

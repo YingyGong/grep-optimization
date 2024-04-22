@@ -67,7 +67,7 @@ fn main() {
     let show_only_matching = args.iter().any(|arg| arg == "only-matching");
 
 
-    match grep(regex, input_file, true, true) {
+    match grep(regex, input_file, false, true) {
         Ok(()) => (),
         Err(e) => eprintln!("Error: {}", e),
     }

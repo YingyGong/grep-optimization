@@ -7,7 +7,7 @@ use crate::cfg::cfg_for_regular_expression;
 use crate::earley_parse::PrettyPrint;
 use std::iter::Filter;
 use core::ops::RangeInclusive;
-use indexmap::IndexSet;
+// use indexmap::IndexSet;
 
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -425,7 +425,7 @@ impl NFA {
         matched_strs
     }
 
-    pub fn check_str_with_start_index(&self, input_str: &str, starting_idx: Vec<usize>) -> IndexSet<String> {
+    pub fn check_str_with_start_index(&self, input_str: &str, starting_idx: Vec<usize>) -> HashSet<String> {
         let mut cur_states: HashSet<State> = HashSet::new();
         let mut cur_positions: HashMap<State, Vec<usize>> = HashMap::new();
         cur_states.insert(self.start_state.clone());
@@ -434,7 +434,7 @@ impl NFA {
         }
 
         // strings to return
-        let mut matched_strs: IndexSet<String> = IndexSet::new();
+        let mut matched_strs: HashSet<String> = HashSet::new();
 
         // only match from starting idx
             

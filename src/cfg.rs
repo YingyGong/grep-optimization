@@ -142,8 +142,8 @@ pub fn prefix_and_remainder_extract(node: &ASTNode) -> (String, String) {
                 // assert!(children.len() == 3);
                 let (prefix1, remainder1) = prefix_and_remainder_extract(&children[0]);
                 let (prefix2, remainder2) = prefix_and_remainder_extract(&children[2]);
-                let (common_prefix, remainder1, remainder2) = two_str_common_prefix(&prefix1, &prefix2);
-                let remainder = format!("{}|{}", remainder1, remainder2);
+                let (common_prefix, prefix_remainder1, prefix_remainder2) = two_str_common_prefix(&prefix1, &prefix2);
+                let remainder = format!("{}{}|{}{}", remainder1, prefix_remainder1, remainder2, prefix_remainder2);
                 (common_prefix, remainder)
             },
             "Concat" => {

@@ -151,7 +151,8 @@ pub fn find_prefix_boyer_moore(p: &str, t: &str) -> Vec<usize> {
 
         if i == -1 || h == previous_k {
             matches.push(k + 1 - p.len());
-            k += if p.len() > 1 { p.len() - f[1] as usize } else { 1 };
+            // k += if p.len() > 1 { p.len() - f[1] as usize } else { 1 }; // delete f[1]
+            k += p.len();
         } else {
             let char_shift = i - r[alphabet_index(t.chars().nth(h as usize).unwrap())][i as usize] as isize;
             let suffix_shift = if i + 1 == p.len() as isize {
@@ -177,6 +178,7 @@ pub fn check_str_prefix_extraction(regex: &str, line: &str) -> HashMap<usize, St
 
     // find all the prefixes in the line
     let mut start_positions = find_prefix_boyer_moore(&prefix, line);
+
     if prefix.is_empty() {
         // start_positions are all index
         for i in 0..line.len() {
@@ -187,6 +189,8 @@ pub fn check_str_prefix_extraction(regex: &str, line: &str) -> HashMap<usize, St
     for i in 0..start_positions.len() {
         start_positions[i] += prefix.len();
     } 
+
+    // println!("start_positions: {:?}", start_positions);
 
     // let mut start_positions = vec![]; // the ending position of the prefix in the line
 

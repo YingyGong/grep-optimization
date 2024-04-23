@@ -416,6 +416,7 @@ impl NFA {
     }
 
     pub fn check_str_with_start_index(&self, input_str: &str, starting_idx: Vec<usize>) -> HashMap<usize, String> {
+        assert!(!starting_idx.is_empty());
         let mut cur_states: HashSet<State> = HashSet::new();
         let mut cur_positions: HashMap<State, Vec<usize>> = HashMap::new();
         cur_states.insert(self.start_state.clone());
@@ -427,7 +428,6 @@ impl NFA {
         let mut matched_strs: HashMap<usize, String> = HashMap::new();
 
         // only match from starting idx
-            
         let min_idx = *starting_idx.iter().min().unwrap_or(&0);
         if starting_idx.contains(&input_str.len()) {
             if self.accept_states.contains(&self.start_state) {
@@ -446,7 +446,6 @@ impl NFA {
                     matched_strs.insert(i, "".to_string());
                 }
             }
-
             // for all possible current states
             for state in &cur_states {
                 if let Some(transitions) = self.transitions.get(state) {
@@ -492,13 +491,12 @@ impl NFA {
                     // turn start_positions into a set
                     let start_positions: HashSet<usize> = start_positions.iter().cloned().collect();
                     for start_pos in start_positions {
-                        
                         if start_pos == i && (&self.start_state == accept_state) {
                             matched_strs.insert(start_pos, "".to_string());
                         }
                         else {
                             matched_strs.insert(start_pos, input_str[start_pos..(i+1)].to_string());
-                            // println!("Accept_state {:?}, Start positions: {:?} and current idx {} with string {}", accept_state, start_pos, i, input_str[start_pos..(i+1)].to_string());
+                            
                         }
                     }
                 }

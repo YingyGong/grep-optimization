@@ -7,7 +7,7 @@ mod helper;
 use crate::nfa::NFA;
 use crate::earley_parse::CFG;
 use crate::cfg::cfg_for_regular_expression;
-use crate::helper::{bad_char_table, good_suffix_table, full_shift_table, find_prefix_boyer_moore};
+use crate::helper::{bad_char_table, good_suffix_table, full_shift_table, find_prefix_boyer_moore, check_str_with_nfa};
 use std::collections::HashSet;
 use std::env;
 use std::error::Error;
@@ -19,7 +19,6 @@ use std::io::{self, BufReader, BufRead};
 fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool) 
 -> std::io::Result<()> 
 {   
-
     let file = File::open(filename)?;
     let reader = BufReader::new(file);
 
@@ -28,46 +27,72 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
     let f = full_shift_table(regex);
 
     let (prefix, rest) = cfg::prefix_and_remainder_extract(&cfg_for_regular_expression().parse(regex).unwrap().collapse());
+    println!("prefix: {} and rest {}", prefix, rest);
 
-    for (index, line) in reader.lines().enumerate() {
-        let line = line?;
-
-        let start_positions = find_prefix_boyer_moore(&prefix, &line, &r, &l, &f);
-
-        let output_strs = helper::check_str_prefix_extraction(&rest, &prefix, &line, start_positions);
-
-        if only_matching && line_number {
-            // print output_str from the smallest key 
-            let mut keys: Vec<usize> = output_strs.keys().cloned().collect();
-            keys.sort();
-            let mut sum_set: HashSet<usize> = HashSet::new();
-            for key in keys {
-                let str = output_strs.get(&key).unwrap();
-                let value = key + str.len();
-                if sum_set.contains(&value) {
-                    continue;
-                }
-                else {
-                    sum_set.insert(value);
-                }
-                println!("{}:{}", index + 1, output_strs.get(&key).unwrap());
+    if !rest.is_empty() {
+        let nfa = nfa::nfa_from_reg(&rest);
+        for (index, line) in reader.lines().enumerate() {
+            let line = line?;
+    
+            let start_positions = find_prefix_boyer_moore(&prefix, &line, &r, &l, &f);
+            if start_positions.is_empty() {
+                continue;
             }
-            continue;
-        }
-        if only_matching {
-            for output_str in output_strs {
-                println!("{}", output_str.1);
-            }
-            continue;
-        }
-        if line_number && output_strs.len() > 0 {
-            println!("{}:{}", index + 1, line);
-            continue;
-        }
-        if output_strs.len() > 0 {
-            println!("{}", line);
+    
+            check_str_with_nfa(&nfa, &line, &prefix, start_positions, index + 1);
         }
     }
+    else {
+        for (index, line) in reader.lines().enumerate() {
+            let line = line?;
+    
+            let start_positions = find_prefix_boyer_moore(&prefix, &line, &r, &l, &f);
+    
+            for _ in start_positions {
+                println!("{}:{}", index + 1, prefix);     
+            }
+        }
+    }
+
+    // for (index, line) in reader.lines().enumerate() {
+    //     let line = line?;
+
+    //     let start_positions = find_prefix_boyer_moore(&prefix, &line, &r, &l, &f);
+
+    //     let output_strs = helper::check_str_prefix_extraction(&rest, &prefix, &line, start_positions);
+
+    //     if only_matching && line_number {
+    //         // print output_str from the smallest key 
+    //         let mut keys: Vec<usize> = output_strs.keys().cloned().collect();
+    //         keys.sort();
+    //         let mut sum_set: HashSet<usize> = HashSet::new();
+    //         for key in keys {
+    //             let str = output_strs.get(&key).unwrap();
+    //             let value = key + str.len();
+    //             if sum_set.contains(&value) {
+    //                 continue;
+    //             }
+    //             else {
+    //                 sum_set.insert(value);
+    //             }
+    //             println!("{}:{}", index + 1, output_strs.get(&key).unwrap());
+    //         }
+    //         continue;
+    //     }
+    //     if only_matching {
+    //         for output_str in output_strs {
+    //             println!("{}", output_str.1);
+    //         }
+    //         continue;
+    //     }
+    //     if line_number && output_strs.len() > 0 {
+    //         println!("{}:{}", index + 1, line);
+    //         continue;
+    //     }
+    //     if output_strs.len() > 0 {
+    //         println!("{}", line);
+    //     }
+    // }
 
     Ok(())
 }

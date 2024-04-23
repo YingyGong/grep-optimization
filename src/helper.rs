@@ -222,6 +222,13 @@ pub fn check_str_prefix_extraction(rest: &str, prefix: &str, line: &str, start_p
     output_strs_with_prefix
 }
 
+pub fn check_str_with_nfa(nfa: &NFA, line: &str, prefix: &str, start_positions: Vec<usize>, line_number:usize) {
+    let output_strs = nfa.check_str_with_start_index(line, start_positions);
+    for output_str in output_strs {
+        println!("{}:{}{}", line_number, prefix, output_str.1);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

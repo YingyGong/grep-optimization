@@ -449,10 +449,6 @@ impl NFA {
                 cur_positions.insert(self.start_state.clone(), vec![i]);
                 
                 cur_states.insert(self.start_state.clone());
-                // if self.accept_states.contains(&self.start_state) {
-                //     // println!("Matched string at start: ");
-                //     matched_strs.insert(i, "".to_string());
-                // }
             }
 
             // for all possible current states

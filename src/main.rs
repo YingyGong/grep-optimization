@@ -36,7 +36,16 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
             // print output_str from the smallest key 
             let mut keys: Vec<usize> = output_strs.keys().cloned().collect();
             keys.sort();
+            let mut sum_set: HashSet<usize> = HashSet::new();
             for key in keys {
+                let str = output_strs.get(&key).unwrap();
+                let value = key + str.len();
+                if sum_set.contains(&value) {
+                    continue;
+                }
+                else {
+                    sum_set.insert(value);
+                }
                 println!("{}:{}", index + 1, output_strs.get(&key).unwrap());
             }
             continue;

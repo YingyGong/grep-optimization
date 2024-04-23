@@ -8,13 +8,15 @@ use crate::earley_parse::CFG;
 use crate::cfg;
 use crate::cfg::cfg_for_regular_expression;
 
-const ALPHABET_SIZE: usize = 256;
+const ALPHABET_SIZE: usize = 96;
 
 // helper functions for boyer moore algorithm
 fn alphabet_index(c: char) -> usize {
-    let ans = c as usize;
-    assert!(ans < ALPHABET_SIZE && ans >= 0);
-    ans
+    match c {
+        '\t' => 0,
+        ' '..='~' => (c as usize) - 0x20 + 1,
+        _ => panic!("Character out of valid range"),
+    }
 }
 
 // Return the length of the match of the substrings of S beginning at idx1 and idx2.
@@ -136,22 +138,22 @@ pub fn find_prefix_boyer_moore(p: &str, t: &str) -> Vec<usize> {
     let f = full_shift_table(p);
 
     let mut k = p.len() -1;
-    let mut previous_k = -1isize;
+    let mut previous_k = -1 as isize;
 
     while k < t.len() {
         let mut i: isize = (p.len() -1) as isize;
         let mut h: isize = k as isize;
 
-        while i >= 0 && (h as isize) > previous_k && p.as_bytes()[i as usize] == t.as_bytes()[h as usize]{
+        while i >= 0 && h > previous_k && p.as_bytes()[i as usize] == t.as_bytes()[h as usize]{
             i -= 1;
             h -= 1;
         }
 
-        if i == -1 || (h as isize) == previous_k {
+        if i == -1 || h == previous_k {
             matches.push(k + 1 - p.len());
             k += if p.len() > 1 { p.len() - f[1] as usize } else { 1 };
         } else {
-            let char_shift = i as isize - r[alphabet_index(t.chars().nth(h as usize).unwrap())][i as usize] as isize;
+            let char_shift = i - r[alphabet_index(t.chars().nth(h as usize).unwrap())][i as usize] as isize;
             let suffix_shift = if i + 1 == p.len() as isize {
                 1
             } else if l[(i + 1) as usize] == -1 {
@@ -185,7 +187,6 @@ pub fn check_str_prefix_extraction(regex: &str, line: &str) -> HashMap<usize, St
     for i in 0..start_positions.len() {
         start_positions[i] += prefix.len();
     } 
-
 
     // let mut start_positions = vec![]; // the ending position of the prefix in the line
 

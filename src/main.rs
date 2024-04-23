@@ -18,11 +18,6 @@ use std::io::{self, BufReader, BufRead};
 fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool) 
 -> std::io::Result<()> 
 {   
-    // without prefix extraction
-    // let cfg = cfg_for_regular_expression();
-    // let ast = cfg.parse(regex).unwrap().collapse();
-    // let nfa = NFA::from_regex(&ast);
-    // let nfa = NFA::epsilon_close(nfa);
 
     let file = File::open(filename)?;
     let reader = BufReader::new(file);

@@ -1,5 +1,6 @@
 use std::cmp::max;
 use std::vec;
+use std::collections::{HashMap};
 
 use crate::nfa::NFA;
 use crate::nfa;
@@ -168,7 +169,7 @@ pub fn find_prefix_boyer_moore(p: &str, t: &str) -> Vec<usize> {
 }
 
 
-pub fn check_str_prefix_extraction(regex: &str, line: &str) -> Vec<String> {
+pub fn check_str_prefix_extraction(regex: &str, line: &str) -> HashMap<usize, String> {
     // let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
     let (prefix, rest) = cfg::prefix_and_remainder_extract(&cfg_for_regular_expression().parse(regex).unwrap().collapse());
 
@@ -187,7 +188,7 @@ pub fn check_str_prefix_extraction(regex: &str, line: &str) -> Vec<String> {
 
     // println!("start_positions from boyer: {:?}", start_positions);
 
-    let mut output_strs_with_prefix = vec![];
+    let mut output_strs_with_prefix: HashMap<usize, String>= HashMap::new();
 
     if start_positions.len() == 0 {
         return output_strs_with_prefix;
@@ -196,20 +197,24 @@ pub fn check_str_prefix_extraction(regex: &str, line: &str) -> Vec<String> {
     if rest != "" {
         // create a new NFA from the rest
         let nfa = nfa::nfa_from_reg(&rest);
-        // nfa.debug_helper();
 
         // check the rest of the line
         let output_strs = nfa.check_str_with_start_index(line, start_positions);
-        
+
         // add prefix to the output strings
         for output_str in output_strs {
-            output_strs_with_prefix.push(format!("{}{}", prefix, output_str));
+            output_strs_with_prefix.insert(output_str.0, format!("{}{}", prefix, output_str.1));
         }
 
     }
     else {
-        output_strs_with_prefix.push(prefix);
+        for i in 0..start_positions.len() {
+            output_strs_with_prefix.insert(i, prefix.to_string());
+        }
     }
+
+    // delete empty string in output_strs_with_prefix
+    // output_strs_with_prefix.retain(|x| x != "");
     output_strs_with_prefix
 }
 
@@ -224,7 +229,7 @@ mod tests {
         println!("prefix: {}, rest: {}", prefix, rest);
         let output_strs = check_str_prefix_extraction(regex, line);
         for output_str in output_strs {
-            println!("{}", output_str);
+            println!("{}", output_str.1);
         }
     }
 
@@ -253,7 +258,7 @@ mod tests {
         // add prefix to the output strings
         let mut output_strs_with_prefix = vec![];
         for output_str in output_strs {
-            output_strs_with_prefix.push(format!("{}{}", prefix, output_str));
+            output_strs_with_prefix.push(format!("{}{}", prefix, output_str.1));
         }
         for output_str in output_strs_with_prefix {
             println!("{}", output_str);
@@ -284,9 +289,9 @@ mod tests {
 
         // add prefix to the output strings
         let mut output_strs_with_prefix = vec![];
-        for output_str in output_strs {
+        // add prefix to the output strings (from the key small to large)
+        for (_, output_str) in output_strs.iter() {
             output_strs_with_prefix.push(format!("{}{}", prefix, output_str));
-            println!("{}", output_str);
         }
     }
 
@@ -319,7 +324,7 @@ mod tests {
         
         let output_strs = check_str_prefix_extraction(regex, line);
         for output_str in output_strs {
-            println!("{}", output_str);
+            println!("{}", output_str.1);
         }
     }
 
@@ -339,7 +344,7 @@ mod tests {
         
         let output_strs = check_str_prefix_extraction(&regex, line);
         for output_str in output_strs {
-            println!("{}", output_str);
+            println!("{}", output_str.1);
         }
     }
 
@@ -359,7 +364,7 @@ mod tests {
         
         let output_strs = check_str_prefix_extraction(&regex, line);
         for output_str in output_strs {
-            println!("{}", output_str);
+            println!("{}", output_str.1);
         }
     }
 
@@ -381,7 +386,7 @@ mod tests {
         
         let output_strs = check_str_prefix_extraction(&regex, line);
         for output_str in output_strs {
-            println!("{}", output_str);
+            println!("{}", output_str.1);
         }
     }
 
@@ -490,7 +495,7 @@ mod tests {
         
         let output_strs = check_str_prefix_extraction(&regex, line);
         for output_str in output_strs {
-            println!("{}", output_str);
+            println!("{}", output_str.1);
         }
     }
 }

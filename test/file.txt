@@ -1,1 +1,2 @@
-aaaaabbbbcccc
+cabab
+abbbababb

@@ -31,17 +31,19 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
         let line = line?;
         let output_strs = helper::check_str_prefix_extraction(regex, &line);
         // get non-overlapping matches (set)
-        let output_strs: HashSet<String> = output_strs.into_iter().collect();
 
         if only_matching && line_number {
-            for output_str in output_strs {
-                println!("{}:{}", index + 1, output_str);
+            // print output_str from the smallest key 
+            let mut keys: Vec<usize> = output_strs.keys().cloned().collect();
+            keys.sort();
+            for key in keys {
+                println!("{}:{}", index + 1, output_strs.get(&key).unwrap());
             }
             continue;
         }
         if only_matching {
             for output_str in output_strs {
-                println!("{}", output_str);
+                println!("{}", output_str.1);
             }
             continue;
         }

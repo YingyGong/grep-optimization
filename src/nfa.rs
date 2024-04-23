@@ -18,8 +18,7 @@ struct State {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum Transition {
     Epsilon,
-    Char(char),
-    Range(char, char),
+    Char(char)
 }
 
 #[derive(Debug)]
@@ -430,9 +429,9 @@ impl NFA {
         // only match from starting idx
             
         let min_idx = *starting_idx.iter().min().unwrap_or(&0);
-        if min_idx == input_str.len() {
+        if starting_idx.contains(&input_str.len()) {
             if self.accept_states.contains(&self.start_state) {
-                matched_strs.insert(min_idx, "".to_string());
+                matched_strs.insert(input_str.len(), "".to_string());
             }
         }
         for (i, c) in input_str.char_indices().skip_while(|(index, _)| *index < min_idx) {

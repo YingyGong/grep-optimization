@@ -121,6 +121,7 @@ impl NFA {
             '.' => {
                 let all_chars = 0x20u8..=0x7Eu8;
                 nfa.add_transition_ch_list(all_chars, accept_state.clone());
+                nfa.add_transition(nfa.start_state.clone(), Transition::Char(0x09 as char), accept_state.clone()); // add Tab
             }
             's' => {
                 let upperclass_letters = 0x41u8..=0x5Au8;
@@ -129,8 +130,8 @@ impl NFA {
                 nfa.add_transition_ch_list(lowerclass_letters, accept_state.clone());
             }
             'S' => {
-                let all_except_letters1 = 0x20u8..=0x41u8;
-                let all_except_letters2 = 0x5Bu8..=0x61u8;
+                let all_except_letters1 = 0x20u8..=0x40u8;
+                let all_except_letters2 = 0x5Bu8..=0x60u8;
                 let all_except_letters3 = 0x7Bu8..=0x7Eu8;
                 // concate all ranges into one vec
                 let all_except_letters = all_except_letters1.chain(all_except_letters2).chain(all_except_letters3);
@@ -145,30 +146,20 @@ impl NFA {
                 nfa.add_transition_ch_list(char_vec, accept_state.clone());
             }
             'D' => {
-                let char_vec = 0x20u8..=0x2Fu8;
+                let char_vec = 0x20u8..=0x2Eu8;
                 nfa.add_transition_ch_list(char_vec, accept_state.clone());
                 let char_vec = 0x3Au8..=0x7Eu8;
                 nfa.add_transition_ch_list(char_vec, accept_state.clone());
             }
             'w' => {
-                let whitespace_chars = 0x0009u8..=0x000Du8;
-                let space = 0x20u8..=0x20u8;
-                let combined_chars = whitespace_chars.chain(space);
-                for c in combined_chars {
-                    let ch = c as char;
-                    nfa.add_transition(nfa.start_state.clone(), Transition::Char(ch), accept_state.clone());
-                }
-
+                let tab = 0x09u8;
+                let space = 0x20u8;
+                nfa.add_transition(nfa.start_state.clone(), Transition::Char(tab as char), accept_state.clone()); // add Tab
+                nfa.add_transition(nfa.start_state.clone(), Transition::Char(space as char), accept_state.clone());
             }
             'W' => {
-                let all_chars = 0x20u8..=0x7Eu8;
-                let whitespace_chars = 0x0009u8..=0x000Du8;
-                let space = 0x20u8..=0x20u8;
-                let combined_chars = all_chars.filter(|c| !whitespace_chars.contains(c) && !space.contains(c));
-                for c in combined_chars {
-                    let ch = c as char;
-                    nfa.add_transition(nfa.start_state.clone(), Transition::Char(ch), accept_state.clone());
-                }
+                let all_chars = 0x21u8..=0x7Eu8;
+                nfa.add_transition_ch_list(all_chars, accept_state.clone());
             }
             _ => (),
         }
@@ -509,6 +500,7 @@ impl NFA {
             }
         }
         matched_strs
+
     }
 }
 

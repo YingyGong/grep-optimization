@@ -430,16 +430,23 @@ impl NFA {
         // only match from starting idx
             
         let min_idx = *starting_idx.iter().min().unwrap_or(&0);
+        println!("i{}", min_idx);
+        if min_idx == input_str.len() {
+            if self.accept_states.contains(&self.start_state) {
+                matched_strs.insert(min_idx, "".to_string());
+            }
+        }
         for (i, c) in input_str.char_indices().skip_while(|(index, _)| *index < min_idx) {
-            
             let mut next_states: HashSet<State> = HashSet::new();
 
             // this state can be reached by a vector of indexes
             let mut next_positions: HashMap<State, Vec<usize>> = HashMap::new();
             if starting_idx.contains(&(i)) {
                 cur_positions.insert(self.start_state.clone(), vec![i]);
-                
                 cur_states.insert(self.start_state.clone());
+                if self.accept_states.contains(&self.start_state) {
+                    matched_strs.insert(i, "".to_string());
+                }
             }
 
             // for all possible current states
@@ -687,6 +694,17 @@ mod test {
         print!("{:?}", nfa.check_str_princeton("a"));
         print!("{:?}", nfa.check_str_princeton("bab"));
         print!("{:?}", nfa.check_str_princeton("cabab"));
+    }
+
+    #[test]
+    fn test_check_string_question_mark() {
+        println!("Test question mark");
+        let nfa = nfa_from_reg("ka?");
+        let nfa = NFA::epsilon_close(nfa);
+        nfa.debug_helper();
+        println!("");
+        print!("{:?}", nfa.check_str_princeton("ka"));
+        print!("{:?}", nfa.check_str_princeton("k"));
     }
 
     #[test]

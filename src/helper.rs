@@ -192,8 +192,6 @@ pub fn check_str_prefix_extraction(regex: &str, line: &str) -> HashMap<usize, St
     // find all the prefixes in the line
     line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
 
-
-
     let mut output_strs_with_prefix: HashMap<usize, String>= HashMap::new();
 
     if start_positions.len() == 0 {
@@ -203,9 +201,12 @@ pub fn check_str_prefix_extraction(regex: &str, line: &str) -> HashMap<usize, St
     if rest != "" {
         // create a new NFA from the rest
         let nfa = nfa::nfa_from_reg(&rest);
+        nfa.debug_helper();
 
         // check the rest of the line
         let output_strs = nfa.check_str_with_start_index(line, start_positions);
+
+        println!("after that function {:?}", output_strs);
 
         // add prefix to the output strings
         for output_str in output_strs {
@@ -557,6 +558,78 @@ mod tests {
     }
 
     #[test]
+    fn test_escape_char() {
+        let regex = r"\\";
+        let line = "abcs\\";
+        let node = cfg_for_regular_expression().parse(regex).unwrap().collapse();
+        let (prefix, rest) = cfg::prefix_and_remainder_extract(&node);
+        println!("prefix: {}, rest: {}", prefix, rest);
+        let mut start_positions = vec![]; // the ending position of the prefix in the line
+
+        // find all the prefixes in the line
+        line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
+
+        // print all the start positions
+        println!("start_positions: {:?}", start_positions);
+        
+        let output_strs = check_str_prefix_extraction(&regex, line);
+        // for output_str in output_strs {
+        //     println!("{}", output_str.1);
+        // }
+
+        let mut keys: Vec<usize> = output_strs.keys().cloned().collect();
+            keys.sort();
+        let mut sum_set: HashSet<usize> = HashSet::new();
+        for key in keys {
+            let str = output_strs.get(&key).unwrap();
+            let value = key + str.len();
+            if sum_set.contains(&value) {
+                continue;
+            }
+            else {
+                sum_set.insert(value);
+            }
+            println!("{}:{}", key, output_strs.get(&key).unwrap());
+        }
+    }
+
+    #[test]
+    fn test_question_mark() {
+        let regex = "ka?";
+        let line = "k";
+        let node = cfg_for_regular_expression().parse(regex).unwrap().collapse();
+        let (prefix, rest) = cfg::prefix_and_remainder_extract(&node);
+        println!("prefix: {}, rest: {}", prefix, rest);
+        let mut start_positions = vec![]; // the ending position of the prefix in the line
+
+        // find all the prefixes in the line
+        line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
+
+        // print all the start positions
+        println!("start_positions: {:?}", start_positions);
+        
+        let output_strs = check_str_prefix_extraction(&regex, line);
+        // for output_str in output_strs {
+        //     println!("{}", output_str.1);
+        // }
+
+        let mut keys: Vec<usize> = output_strs.keys().cloned().collect();
+            keys.sort();
+        let mut sum_set: HashSet<usize> = HashSet::new();
+        for key in keys {
+            let str = output_strs.get(&key).unwrap();
+            let value = key + str.len();
+            if sum_set.contains(&value) {
+                continue;
+            }
+            else {
+                sum_set.insert(value);
+            }
+            println!("{}:{}", key, output_strs.get(&key).unwrap());
+        }
+    }
+
+    #[test]
     fn test_vec() {
         let mut vec = Vec::new();
         vec.push(1);
@@ -566,6 +639,8 @@ mod tests {
         for item in vec {
             println!("{}", item);
         }
+        let regex = "\\";
+        let new_str = format!(r"{}", regex);
     }
 
     

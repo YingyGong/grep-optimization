@@ -201,12 +201,11 @@ pub fn check_str_prefix_extraction(regex: &str, line: &str) -> HashMap<usize, St
     if rest != "" {
         // create a new NFA from the rest
         let nfa = nfa::nfa_from_reg(&rest);
-        nfa.debug_helper();
 
         // check the rest of the line
         let output_strs = nfa.check_str_with_start_index(line, start_positions);
 
-        println!("after that function {:?}", output_strs);
+        // println!("after that function {:?}", output_strs);
 
         // add prefix to the output strings
         for output_str in output_strs {

@@ -430,7 +430,6 @@ impl NFA {
         // only match from starting idx
             
         let min_idx = *starting_idx.iter().min().unwrap_or(&0);
-        println!("i{}", min_idx);
         if min_idx == input_str.len() {
             if self.accept_states.contains(&self.start_state) {
                 matched_strs.insert(min_idx, "".to_string());

@@ -173,20 +173,26 @@ pub fn check_str_prefix_extraction(regex: &str, line: &str) -> HashMap<usize, St
     // let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
     let (prefix, rest) = cfg::prefix_and_remainder_extract(&cfg_for_regular_expression().parse(regex).unwrap().collapse());
 
-    // find all the prefixes in the line
-    let mut start_positions = find_prefix_boyer_moore(&prefix, line);
-    if prefix.is_empty() {
-        // start_positions are all index
-        for i in 0..line.len() {
-            start_positions.push(i);
-        }
-    }
-    // add length of prefix to the start_positions
-    for i in 0..start_positions.len() {
-        start_positions[i] += prefix.len();
-    } 
+    // // find all the prefixes in the line
+    // let mut start_positions = find_prefix_boyer_moore(&prefix, line);
+    // if prefix.is_empty() {
+    //     // start_positions are all index
+    //     for i in 0..line.len() {
+    //         start_positions.push(i);
+    //     }
+    // }
+    // // add length of prefix to the start_positions
+    // for i in 0..start_positions.len() {
+    //     start_positions[i] += prefix.len();
+    // } 
 
-    // println!("start_positions from boyer: {:?}", start_positions);
+
+    let mut start_positions = vec![]; // the ending position of the prefix in the line
+
+    // find all the prefixes in the line
+    line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
+
+
 
     let mut output_strs_with_prefix: HashMap<usize, String>= HashMap::new();
 

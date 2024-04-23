@@ -46,7 +46,7 @@ fn preprocess(s: &str) -> Vec<i32> {
     z[0] = s.len() as i32;
     z[1] = match_length(s, 0, 1) as i32;
     for i in 2..(1 + z[1]) {
-        z[i as usize] = z[i as usize] - i + 1;
+        z[i as usize] = z[1] - i + 1;
     }
     let mut l = 0;
     let mut r = 0;
@@ -59,7 +59,7 @@ fn preprocess(s: &str) -> Vec<i32> {
                 z[i as usize] = b;
             }
             else {
-                z[i as usize] = a + match_length(s, a as usize, r as usize) as i32;
+                z[i as usize] = a + match_length(s, a as usize, r as usize + 1) as i32;
                 l = i;
                 r = i + z[i as usize] - 1;
             }

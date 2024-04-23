@@ -7,6 +7,7 @@ mod helper;
 use crate::nfa::NFA;
 use crate::earley_parse::CFG;
 use crate::cfg::cfg_for_regular_expression;
+use crate::helper::{bad_char_table, good_suffix_table, full_shift_table, find_prefix_boyer_moore};
 use std::collections::HashSet;
 use std::env;
 use std::error::Error;
@@ -22,10 +23,18 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
     let file = File::open(filename)?;
     let reader = BufReader::new(file);
 
+    let r = bad_char_table(regex);
+    let l = good_suffix_table(regex);
+    let f = full_shift_table(regex);
+
+    let (prefix, rest) = cfg::prefix_and_remainder_extract(&cfg_for_regular_expression().parse(regex).unwrap().collapse());
+
     for (index, line) in reader.lines().enumerate() {
         let line = line?;
-        let output_strs = helper::check_str_prefix_extraction(regex, &line);
-        // get non-overlapping matches (set)
+
+        let start_positions = find_prefix_boyer_moore(&prefix, &line, &r, &l, &f);
+
+        let output_strs = helper::check_str_prefix_extraction(&rest, &prefix, &line, start_positions);
 
         if only_matching && line_number {
             // print output_str from the smallest key 

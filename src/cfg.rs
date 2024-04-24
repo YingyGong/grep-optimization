@@ -176,7 +176,7 @@ pub fn prefix_and_remainder_extract(node: &ASTNode) -> (String, String) {
                     if prefix.is_empty() {
                         (prefix, format!("({})", remainder))
                     } else {
-                        (format!("{}", prefix), remainder)
+                        (format!("({})", prefix), remainder)
                     }
                 }
             },

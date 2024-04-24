@@ -337,6 +337,64 @@ mod test {
         println!("{:#?}", PrettyPrint(&tree));
         let (prefix, rest) = prefix_and_remainder_extract(&tree);
         println!("{} and {}", prefix, rest);
+
+        
+    }
+
+    #[test]
+    fn test_kleene_star_prefix_2() {
+        let cfg = cfg_for_regular_expression();
+        let result = cfg.parse(r"(abc|abd)de");
+        assert!(result.is_some());
+        let tree = result.unwrap().collapse();
+        println!("{:#?}", PrettyPrint(&tree));
+        let (prefix, rest) = prefix_and_remainder_extract(&tree);
+        println!("{} and {}", prefix, rest);
+
+        let cfg = cfg_for_regular_expression();
+        let result = cfg.parse(r"(abc|abc)*de");
+        assert!(result.is_some());
+        let tree = result.unwrap().collapse();
+        println!("{:#?}", PrettyPrint(&tree));
+        let (prefix, rest) = prefix_and_remainder_extract(&tree);
+        println!("{} and {}", prefix, rest);
+
+        let cfg = cfg_for_regular_expression();
+        let result = cfg.parse(r"(abc|abc)+de");
+        assert!(result.is_some());
+        let tree = result.unwrap().collapse();
+        println!("{:#?}", PrettyPrint(&tree));
+        let (prefix, rest) = prefix_and_remainder_extract(&tree);
+        println!("{} and {}", prefix, rest);
+
+        let cfg = cfg_for_regular_expression();
+        let result = cfg.parse(r"(abc|abc)?de");
+        assert!(result.is_some());
+        let tree = result.unwrap().collapse();
+        println!("{:#?}", PrettyPrint(&tree));
+        let (prefix, rest) = prefix_and_remainder_extract(&tree);
+        println!("{} and {}", prefix, rest);
+
+        let result = cfg.parse(r"ab(cd)*");
+        assert!(result.is_some());
+        let tree = result.unwrap().collapse();
+        println!("{:#?}", PrettyPrint(&tree));
+        let (prefix, rest) = prefix_and_remainder_extract(&tree);
+        println!("{} and {}", prefix, rest);
+
+        let result = cfg.parse(r"ab(cd)+");
+        assert!(result.is_some());
+        let tree = result.unwrap().collapse();
+        println!("{:#?}", PrettyPrint(&tree));
+        let (prefix, rest) = prefix_and_remainder_extract(&tree);
+        println!("{} and {}", prefix, rest);
+
+        let result = cfg.parse(r"ab(cd)?");
+        assert!(result.is_some());
+        let tree = result.unwrap().collapse();
+        println!("{:#?}", PrettyPrint(&tree));
+        let (prefix, rest) = prefix_and_remainder_extract(&tree);
+        println!("{} and {}", prefix, rest);
     }
 
     // ".*fail.*"

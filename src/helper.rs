@@ -232,15 +232,22 @@ pub fn check_str_with_nfa(nfa: &NFA, line: &str, prefix: &str, start_positions: 
 
     let mut keys: Vec<usize> = output_strs.keys().cloned().collect();
     keys.sort();
-    let mut sum_set: HashSet<usize> = HashSet::new();
+    let mut end_idx: usize = line.len() + 1;
+    
     for key in keys {
         let str = output_strs.get(&key).unwrap();
         let value = key + str.len();
-        if sum_set.contains(&value) {
-            continue;
+        if end_idx == line.len() + 1 {
+            end_idx = value;
         }
         else {
-            sum_set.insert(value);
+            if value <= end_idx {
+                continue;
+            }
+            if key < end_idx {
+                continue;
+            }
+            end_idx = value;
         }
         let output_str = format!("{}{}", prefix, output_strs.get(&key).unwrap());
         if output_str.is_empty() {

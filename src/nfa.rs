@@ -155,8 +155,6 @@ impl NFA {
                 nfa.add_transition(nfa.start_state.clone(), Transition::Char(space as char), accept_state.clone());
             }
             'W' => {
-                
-
                 let char_vec = 0x20u8..=0x2Eu8;
                 nfa.add_transition_ch_list(char_vec, accept_state.clone());
                 let char_vec = 0x3Au8..=0x7Eu8;
@@ -491,7 +489,7 @@ impl NFA {
         let mut matched_strs: HashMap<usize, String> = HashMap::new();
 
         // only match from starting idx
-        let min_idx = *starting_idx.iter().min().unwrap_or(&0);
+        let min_idx = starting_idx[0]; // must be successful, since it is sorted
         if starting_idx.contains(&input_str.len()) {
             if self.accept_states.contains(&self.start_state) {
                 matched_strs.insert(input_str.len(), "".to_string());
@@ -510,7 +508,7 @@ impl NFA {
                 }
             }
             // for all possible current states
-            for state in &cur_states {
+            for (state, start_position) in cur_positions.iter() {
                 if let Some(transitions) = self.transitions.get(state) {
                     for (transition, next_state) in transitions {
                         match transition {
@@ -520,22 +518,18 @@ impl NFA {
                                 // get the starting positions of the current state
                                 // if the next state is not in the hashmap, add the starting position of the current state
                                 if !next_positions.contains_key(next_state) {
-                                    if let Some(start_position) = cur_positions.get(state) {
-                                        next_positions.insert(next_state.clone(), start_position.clone());
-                                    } else {
-                                        next_positions.insert(next_state.clone(), vec![i]);
-                                    }
+                                    next_positions.insert(next_state.clone(), start_position.clone());
                                 }
                                 else {
                                     // if the next state is in the hashmap, add the starting positions of the current state
                                     // to the vector of starting positions of the next state
-                                    if let Some(start_position) = cur_positions.get(state) {
+                                    
                                         if let Some(next_start_positions) = next_positions.get_mut(next_state) {
                                             for start_pos in start_position {
                                                 next_start_positions.push(*start_pos);
                                             }
                                         }
-                                    }
+                                    
                                 }
                             }
                             _ => (),

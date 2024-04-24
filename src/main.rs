@@ -30,23 +30,36 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
     let mut nfa = nfa::nfa_from_reg(&regex);
     let prefix = nfa.find_prefix_from_nfa();
 
-    let r = bad_char_table(prefix.as_str());
-    let l = good_suffix_table(prefix.as_str());
-    let f = full_shift_table(prefix.as_str());
+    if ! prefix.is_empty() {
+        let r = bad_char_table(prefix.as_str());
+        let l = good_suffix_table(prefix.as_str());
+        let f = full_shift_table(prefix.as_str());
 
-    for (index, line) in reader.lines().enumerate() {
-        let line = line?;
-
-        let start_positions = find_prefix_boyer_moore(&prefix, &line, &r, &l, &f);
-        // println!("start_positions: {:?}", start_positions);
-
-        if start_positions.is_empty() {
-            continue;
+        for (index, line) in reader.lines().enumerate() {
+            let line = line?;
+    
+            let start_positions: Vec<usize> = find_prefix_boyer_moore(&prefix, &line, &r, &l, &f);
+    
+            // println!("start_positions: {:?}", start_positions);
+    
+            if start_positions.is_empty() {
+                continue;
+            }
+            // nfa.debug_helper();
+            
+            check_str_with_nfa(&nfa, &line, &prefix, start_positions, index + 1);
         }
-        // nfa.debug_helper();
-        
-        check_str_with_nfa(&nfa, &line, &prefix, start_positions, index + 1);
     }
+
+    else {
+        for (index, line) in reader.lines().enumerate() {
+            let line = line?;
+            let start_positions: Vec<usize> = (0..line.len()).collect();
+            check_str_with_nfa(&nfa, &line, &prefix, start_positions, index + 1);
+        }
+    }
+    
+    
     
       
 

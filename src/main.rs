@@ -26,8 +26,11 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
     let l = good_suffix_table(regex);
     let f = full_shift_table(regex);
 
-    let (prefix, rest) = cfg::prefix_and_remainder_extract(&cfg_for_regular_expression().parse(regex).unwrap().collapse());
+    // let (prefix, rest) = cfg::prefix_and_remainder_extract(&cfg_for_regular_expression().parse(regex).unwrap().collapse());
     // println!("prefix: {} and rest {}", prefix, rest);
+
+    let prefix = "";
+    let rest = regex;
 
     if !rest.is_empty() {
         let nfa = nfa::nfa_from_reg(&rest);

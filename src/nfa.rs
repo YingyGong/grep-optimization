@@ -303,6 +303,8 @@ impl NFA {
         self
     }
 
+    // pub fn find_prefix
+
     pub fn from_regex(node: &ASTNode) -> Self{
         match node {
             ASTNode::NonTerminal { sym, children } =>
@@ -827,7 +829,7 @@ mod test {
 
     #[test]
     fn test_prefix_nfa() {
-        let nfa = nfa_from_reg("foo(d|l)");
+        let nfa = nfa_from_reg("(fd)+|fl");
         nfa.debug_helper();
     }
 }

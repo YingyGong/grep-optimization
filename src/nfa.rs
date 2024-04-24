@@ -155,7 +155,7 @@ impl NFA {
                 let tab = 0x09u8;
                 let space = 0x20u8;
                 nfa.add_transition(nfa.start_state.clone(), Transition::Char(tab as char), accept_state.clone()); // add Tab
-                nfa.add_transition(nfa.start_state.clone(), Transition::Char(space as char), accept_state.clone());
+                nfa.add_transition(nfa.start_state.clone(), Transition::Char(space as char), accept_state.clone()); // add Space
             }
             'W' => {
                 let all_chars = 0x21u8..=0x7Eu8;

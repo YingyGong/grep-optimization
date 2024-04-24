@@ -31,6 +31,7 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
 
     if !rest.is_empty() {
         let nfa = nfa::nfa_from_reg(&rest);
+        // println!("{}", rest);
         // nfa.debug_helper();
         for (index, line) in reader.lines().enumerate() {
             let line = line?;

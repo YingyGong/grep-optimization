@@ -160,7 +160,11 @@ pub fn prefix_and_remainder_extract(node: &ASTNode) -> (String, String) {
                     '*' | '?' => (String::new(), format!("{}{}{}", prefix_and_remainder_extract(&children[0]).0, prefix_and_remainder_extract(&children[0]).1, children[1].unwrap_terminal())),
                     '+' => {
                         let prefix = prefix_and_remainder_extract(&children[0]).0;
-                        let remainder = format!("{}{}*", prefix_and_remainder_extract(&children[0]).0, prefix_and_remainder_extract(&children[0]).1);
+                        let mut repeat_char = '*';
+                        if prefix.is_empty() {
+                            repeat_char = '+';
+                        }
+                        let remainder = format!("{}{}{}", prefix_and_remainder_extract(&children[0]).0, prefix_and_remainder_extract(&children[0]).1, repeat_char);
                         (prefix, remainder)
                     },
                     _ => panic!("Invalid repeat operator"),

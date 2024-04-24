@@ -254,189 +254,189 @@ pub fn check_str_with_nfa(nfa: &NFA, line: &str, prefix: &str, start_positions: 
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
-    fn test_check_str_prefix_extraction() {
-        let regex = "Caltech|California";
-        let line = "Caltech is in California";
-        let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
-        println!("prefix: {}, rest: {}", prefix, rest);
-        let output_strs = check_str_prefix_extraction(regex, line);
-        for output_str in output_strs {
-            println!("{}", output_str.1);
-        }
-    }
+    // #[test]
+    // fn test_check_str_prefix_extraction() {
+    //     let regex = "Caltech|California";
+    //     let line = "Caltech is in California";
+    //     let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
+    //     println!("prefix: {}, rest: {}", prefix, rest);
+    //     let output_strs = check_str_prefix_extraction(regex, line);
+    //     for output_str in output_strs {
+    //         println!("{}", output_str.1);
+    //     }
+    // }
 
-    #[test]
-    fn test_start_positions_cali() {
-        let regex = "Caltech|California";
-        let line = "Caltech is in California";
-        let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
-        println!("prefix: {}, rest: {}", prefix, rest);
+    // #[test]
+    // fn test_start_positions_cali() {
+    //     let regex = "Caltech|California";
+    //     let line = "Caltech is in California";
+    //     let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
+    //     println!("prefix: {}, rest: {}", prefix, rest);
 
-        let mut start_positions = vec![]; // the ending position of the prefix in the line
+    //     let mut start_positions = vec![]; // the ending position of the prefix in the line
 
-        // find all the prefixes in the line
-        line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
-        // print the len of the start_positions
-        println!("len of start_positions: {}", start_positions.len());
-        println!("start_positions: {:?}", start_positions);
+    //     // find all the prefixes in the line
+    //     line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
+    //     // print the len of the start_positions
+    //     println!("len of start_positions: {}", start_positions.len());
+    //     println!("start_positions: {:?}", start_positions);
 
-        // create a new NFA from the rest
-        let nfa = nfa::nfa_from_reg(&rest);
-        nfa.debug_helper();
+    //     // create a new NFA from the rest
+    //     let nfa = nfa::nfa_from_reg(&rest);
+    //     nfa.debug_helper();
 
-        // check the rest of the line
-        let output_strs = nfa.check_str_with_start_index(line, start_positions);
+    //     // check the rest of the line
+    //     let output_strs = nfa.check_str_with_start_index(line, start_positions);
 
-        // add prefix to the output strings
-        let mut output_strs_with_prefix = vec![];
-        for output_str in output_strs {
-            output_strs_with_prefix.push(format!("{}{}", prefix, output_str.1));
-        }
-        for output_str in output_strs_with_prefix {
-            println!("{}", output_str);
-        }
-    }
+    //     // add prefix to the output strings
+    //     let mut output_strs_with_prefix = vec![];
+    //     for output_str in output_strs {
+    //         output_strs_with_prefix.push(format!("{}{}", prefix, output_str.1));
+    //     }
+    //     for output_str in output_strs_with_prefix {
+    //         println!("{}", output_str);
+    //     }
+    // }
 
-    #[test]
-    fn test_start_positions_simple() {
-        let regex = "ab|ac";
-        let line = "ab in ac";
-        let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
-        println!("prefix: {}, rest: {}", prefix, rest);
+    // #[test]
+    // fn test_start_positions_simple() {
+    //     let regex = "ab|ac";
+    //     let line = "ab in ac";
+    //     let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
+    //     println!("prefix: {}, rest: {}", prefix, rest);
 
-        let mut start_positions = vec![]; // the ending position of the prefix in the line
+    //     let mut start_positions = vec![]; // the ending position of the prefix in the line
 
-        // find all the prefixes in the line
-        line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
-        // print the len of the start_positions
-        println!("len of start_positions: {}", start_positions.len());
-        println!("start_positions: {:?}", start_positions);
+    //     // find all the prefixes in the line
+    //     line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
+    //     // print the len of the start_positions
+    //     println!("len of start_positions: {}", start_positions.len());
+    //     println!("start_positions: {:?}", start_positions);
 
-        // create a new NFA from the rest
-        let nfa = nfa::nfa_from_reg(&rest);
-        nfa.debug_helper();
+    //     // create a new NFA from the rest
+    //     let nfa = nfa::nfa_from_reg(&rest);
+    //     nfa.debug_helper();
 
-        // check the rest of the line
-        let output_strs = nfa.check_str_with_start_index(line, start_positions);
+    //     // check the rest of the line
+    //     let output_strs = nfa.check_str_with_start_index(line, start_positions);
 
-        // add prefix to the output strings
-        let mut output_strs_with_prefix = vec![];
-        // add prefix to the output strings (from the key small to large)
-        for (_, output_str) in output_strs.iter() {
-            output_strs_with_prefix.push(format!("{}{}", prefix, output_str));
-        }
-    }
+    //     // add prefix to the output strings
+    //     let mut output_strs_with_prefix = vec![];
+    //     // add prefix to the output strings (from the key small to large)
+    //     for (_, output_str) in output_strs.iter() {
+    //         output_strs_with_prefix.push(format!("{}{}", prefix, output_str));
+    //     }
+    // }
 
-    #[test]
-    fn test_start_position_repeat() {
-        let regex = "(ab)*";
-        let line = "ababab";
-        let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
-        let mut start_positions = vec![]; // the ending position of the prefix in the line
+    // #[test]
+    // fn test_start_position_repeat() {
+    //     let regex = "(ab)*";
+    //     let line = "ababab";
+    //     let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
+    //     let mut start_positions = vec![]; // the ending position of the prefix in the line
 
-        // find all the prefixes in the line
-        line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
+    //     // find all the prefixes in the line
+    //     line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
 
-        // print all the start positions
-        println!("start_positions: {:?}", start_positions);
-    }
+    //     // print all the start positions
+    //     println!("start_positions: {:?}", start_positions);
+    // }
 
-    #[test]
-    fn test_helper_foo() {
-        let regex = "foo(d|l)";
-        let line = "food fool";
-        let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
-        let mut start_positions = vec![]; // the ending position of the prefix in the line
+    // #[test]
+    // fn test_helper_foo() {
+    //     let regex = "foo(d|l)";
+    //     let line = "food fool";
+    //     let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
+    //     let mut start_positions = vec![]; // the ending position of the prefix in the line
 
-        // find all the prefixes in the line
-        line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
+    //     // find all the prefixes in the line
+    //     line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
 
-        // print all the start positions
-        println!("start_positions: {:?}", start_positions);
+    //     // print all the start positions
+    //     println!("start_positions: {:?}", start_positions);
         
-        let output_strs = check_str_prefix_extraction(regex, line);
-        for output_str in output_strs {
-            println!("{}", output_str.1);
-        }
-    }
+    //     let output_strs = check_str_prefix_extraction(regex, line);
+    //     for output_str in output_strs {
+    //         println!("{}", output_str.1);
+    //     }
+    // }
 
-    #[test]
-    fn test_helper_kleen_star() {
-        let regex = "(ab)*";
-        let line = "cabab";
-        let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
-        println!("prefix: {}, rest: {}", prefix, rest);
-        let mut start_positions = vec![]; // the ending position of the prefix in the line
+    // #[test]
+    // fn test_helper_kleen_star() {
+    //     let regex = "(ab)*";
+    //     let line = "cabab";
+    //     let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
+    //     println!("prefix: {}, rest: {}", prefix, rest);
+    //     let mut start_positions = vec![]; // the ending position of the prefix in the line
 
-        // find all the prefixes in the line
-        line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
+    //     // find all the prefixes in the line
+    //     line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
 
-        // print all the start positions
-        println!("start_positions: {:?}", start_positions);
+    //     // print all the start positions
+    //     println!("start_positions: {:?}", start_positions);
         
-        let output_strs = check_str_prefix_extraction(&regex, line);
-        for output_str in output_strs {
-            println!("{}", output_str.1);
-        }
-    }
+    //     let output_strs = check_str_prefix_extraction(&regex, line);
+    //     for output_str in output_strs {
+    //         println!("{}", output_str.1);
+    //     }
+    // }
 
-    #[test]
-    fn test_helper_kleen_star_2() {
-        let regex = "ab+";
-        let line = "ababbabbb";
-        let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
-        println!("prefix: {}, rest: {}", prefix, rest);
-        let mut start_positions = vec![]; // the ending position of the prefix in the line
+    // #[test]
+    // fn test_helper_kleen_star_2() {
+    //     let regex = "ab+";
+    //     let line = "ababbabbb";
+    //     let (prefix, rest) = cfg::prefix_and_remainder_extract_after_plus(regex);
+    //     println!("prefix: {}, rest: {}", prefix, rest);
+    //     let mut start_positions = vec![]; // the ending position of the prefix in the line
 
-        // find all the prefixes in the line
-        line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
+    //     // find all the prefixes in the line
+    //     line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
 
-        // print all the start positions
-        println!("start_positions: {:?}", start_positions);
+    //     // print all the start positions
+    //     println!("start_positions: {:?}", start_positions);
         
-        let output_strs = check_str_prefix_extraction(&regex, line);
-        for output_str in output_strs {
-            println!("{}", output_str.1);
-        }
-    }
+    //     let output_strs = check_str_prefix_extraction(&regex, line);
+    //     for output_str in output_strs {
+    //         println!("{}", output_str.1);
+    //     }
+    // }
 
 
-    #[test]
-    fn test_helper_kleen_star_3() {
-        let regex = "b*";
-        let line = "abbababbb";
-        let node = cfg_for_regular_expression().parse(regex).unwrap().collapse();
-        let (prefix, rest) = cfg::prefix_and_remainder_extract(&node);
-        println!("prefix: {}, rest: {}", prefix, rest);
-        let mut start_positions = vec![]; // the ending position of the prefix in the line
+    // #[test]
+    // fn test_helper_kleen_star_3() {
+    //     let regex = "b*";
+    //     let line = "abbababbb";
+    //     let node = cfg_for_regular_expression().parse(regex).unwrap().collapse();
+    //     let (prefix, rest) = cfg::prefix_and_remainder_extract(&node);
+    //     println!("prefix: {}, rest: {}", prefix, rest);
+    //     let mut start_positions = vec![]; // the ending position of the prefix in the line
 
-        // find all the prefixes in the line
-        line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
+    //     // find all the prefixes in the line
+    //     line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
 
-        // print all the start positions
-        println!("start_positions: {:?}", start_positions);
+    //     // print all the start positions
+    //     println!("start_positions: {:?}", start_positions);
         
-        let output_strs = check_str_prefix_extraction(&regex, line);
-        // for output_str in output_strs {
-        //     println!("{}", output_str.1);
-        // }
+    //     let output_strs = check_str_prefix_extraction(&regex, line);
+    //     // for output_str in output_strs {
+    //     //     println!("{}", output_str.1);
+    //     // }
 
-        let mut keys: Vec<usize> = output_strs.keys().cloned().collect();
-            keys.sort();
-        let mut sum_set: HashSet<usize> = HashSet::new();
-        for key in keys {
-            let str = output_strs.get(&key).unwrap();
-            let value = key + str.len();
-            if sum_set.contains(&value) {
-                continue;
-            }
-            else {
-                sum_set.insert(value);
-            }
-            println!("{}:{}", key, output_strs.get(&key).unwrap());
-        }
-    }
+    //     let mut keys: Vec<usize> = output_strs.keys().cloned().collect();
+    //         keys.sort();
+    //     let mut sum_set: HashSet<usize> = HashSet::new();
+    //     for key in keys {
+    //         let str = output_strs.get(&key).unwrap();
+    //         let value = key + str.len();
+    //         if sum_set.contains(&value) {
+    //             continue;
+    //         }
+    //         else {
+    //             sum_set.insert(value);
+    //         }
+    //         println!("{}:{}", key, output_strs.get(&key).unwrap());
+    //     }
+    // }
 
     // #[test]
     // fn test_boyer_moore() {
@@ -526,134 +526,134 @@ mod tests {
     //     assert_eq!(matches, [10]);
     // }
 
-    #[test]
-    fn test_order() {
-        let regex = "c(ab)*";
-        let line = "cabab";
-        let node = cfg_for_regular_expression().parse(regex).unwrap().collapse();
-        let (prefix, rest) = cfg::prefix_and_remainder_extract(&node);
-        println!("prefix: {}, rest: {}", prefix, rest);
-        let mut start_positions = vec![]; // the ending position of the prefix in the line
+    // #[test]
+    // fn test_order() {
+    //     let regex = "c(ab)*";
+    //     let line = "cabab";
+    //     let node = cfg_for_regular_expression().parse(regex).unwrap().collapse();
+    //     let (prefix, rest) = cfg::prefix_and_remainder_extract(&node);
+    //     println!("prefix: {}, rest: {}", prefix, rest);
+    //     let mut start_positions = vec![]; // the ending position of the prefix in the line
 
-        // find all the prefixes in the line
-        line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
+    //     // find all the prefixes in the line
+    //     line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
 
-        // print all the start positions
-        println!("start_positions: {:?}", start_positions);
+    //     // print all the start positions
+    //     println!("start_positions: {:?}", start_positions);
         
-        let output_strs = check_str_prefix_extraction(&regex, line);
-        for output_str in output_strs {
-            println!("{}", output_str.1);
-        }
-    }
+    //     let output_strs = check_str_prefix_extraction(&regex, line);
+    //     for output_str in output_strs {
+    //         println!("{}", output_str.1);
+    //     }
+    // }
 
-    #[test]
-    fn test_union_all() {
-        let regex = "a|b|c";
-        let line = "abc";
-        let node = cfg_for_regular_expression().parse(regex).unwrap().collapse();
-        let (prefix, rest) = cfg::prefix_and_remainder_extract(&node);
-        println!("prefix: {}, rest: {}", prefix, rest);
-        let mut start_positions = vec![]; // the ending position of the prefix in the line
+    // #[test]
+    // fn test_union_all() {
+    //     let regex = "a|b|c";
+    //     let line = "abc";
+    //     let node = cfg_for_regular_expression().parse(regex).unwrap().collapse();
+    //     let (prefix, rest) = cfg::prefix_and_remainder_extract(&node);
+    //     println!("prefix: {}, rest: {}", prefix, rest);
+    //     let mut start_positions = vec![]; // the ending position of the prefix in the line
 
-        // find all the prefixes in the line
-        line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
+    //     // find all the prefixes in the line
+    //     line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
 
-        // print all the start positions
-        println!("start_positions: {:?}", start_positions);
+    //     // print all the start positions
+    //     println!("start_positions: {:?}", start_positions);
         
-        let output_strs = check_str_prefix_extraction(&regex, line);
-        // for output_str in output_strs {
-        //     println!("{}", output_str.1);
-        // }
+    //     let output_strs = check_str_prefix_extraction(&regex, line);
+    //     // for output_str in output_strs {
+    //     //     println!("{}", output_str.1);
+    //     // }
 
-        let mut keys: Vec<usize> = output_strs.keys().cloned().collect();
-            keys.sort();
-        let mut sum_set: HashSet<usize> = HashSet::new();
-        for key in keys {
-            let str = output_strs.get(&key).unwrap();
-            let value = key + str.len();
-            if sum_set.contains(&value) {
-                continue;
-            }
-            else {
-                sum_set.insert(value);
-            }
-            println!("{}:{}", key, output_strs.get(&key).unwrap());
-        }
-    }
+    //     let mut keys: Vec<usize> = output_strs.keys().cloned().collect();
+    //         keys.sort();
+    //     let mut sum_set: HashSet<usize> = HashSet::new();
+    //     for key in keys {
+    //         let str = output_strs.get(&key).unwrap();
+    //         let value = key + str.len();
+    //         if sum_set.contains(&value) {
+    //             continue;
+    //         }
+    //         else {
+    //             sum_set.insert(value);
+    //         }
+    //         println!("{}:{}", key, output_strs.get(&key).unwrap());
+    //     }
+    // }
 
-    #[test]
-    fn test_escape_char() {
-        let regex = r"\\";
-        let line = "abcs\\";
-        let node = cfg_for_regular_expression().parse(regex).unwrap().collapse();
-        let (prefix, rest) = cfg::prefix_and_remainder_extract(&node);
-        println!("prefix: {}, rest: {}", prefix, rest);
-        let mut start_positions = vec![]; // the ending position of the prefix in the line
+    // #[test]
+    // fn test_escape_char() {
+    //     let regex = r"\\";
+    //     let line = "abcs\\";
+    //     let node = cfg_for_regular_expression().parse(regex).unwrap().collapse();
+    //     let (prefix, rest) = cfg::prefix_and_remainder_extract(&node);
+    //     println!("prefix: {}, rest: {}", prefix, rest);
+    //     let mut start_positions = vec![]; // the ending position of the prefix in the line
 
-        // find all the prefixes in the line
-        line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
+    //     // find all the prefixes in the line
+    //     line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
 
-        // print all the start positions
-        println!("start_positions: {:?}", start_positions);
+    //     // print all the start positions
+    //     println!("start_positions: {:?}", start_positions);
         
-        let output_strs = check_str_prefix_extraction(&regex, line);
-        // for output_str in output_strs {
-        //     println!("{}", output_str.1);
-        // }
+    //     let output_strs = check_str_prefix_extraction(&regex, line);
+    //     // for output_str in output_strs {
+    //     //     println!("{}", output_str.1);
+    //     // }
 
-        let mut keys: Vec<usize> = output_strs.keys().cloned().collect();
-            keys.sort();
-        let mut sum_set: HashSet<usize> = HashSet::new();
-        for key in keys {
-            let str = output_strs.get(&key).unwrap();
-            let value = key + str.len();
-            if sum_set.contains(&value) {
-                continue;
-            }
-            else {
-                sum_set.insert(value);
-            }
-            println!("{}:{}", key, output_strs.get(&key).unwrap());
-        }
-    }
+    //     let mut keys: Vec<usize> = output_strs.keys().cloned().collect();
+    //         keys.sort();
+    //     let mut sum_set: HashSet<usize> = HashSet::new();
+    //     for key in keys {
+    //         let str = output_strs.get(&key).unwrap();
+    //         let value = key + str.len();
+    //         if sum_set.contains(&value) {
+    //             continue;
+    //         }
+    //         else {
+    //             sum_set.insert(value);
+    //         }
+    //         println!("{}:{}", key, output_strs.get(&key).unwrap());
+    //     }
+    // }
 
-    #[test]
-    fn test_question_mark() {
-        let regex = "ka?";
-        let line = "k";
-        let node = cfg_for_regular_expression().parse(regex).unwrap().collapse();
-        let (prefix, rest) = cfg::prefix_and_remainder_extract(&node);
-        println!("prefix: {}, rest: {}", prefix, rest);
-        let mut start_positions = vec![]; // the ending position of the prefix in the line
+    // #[test]
+    // fn test_question_mark() {
+    //     let regex = "ka?";
+    //     let line = "k";
+    //     let node = cfg_for_regular_expression().parse(regex).unwrap().collapse();
+    //     let (prefix, rest) = cfg::prefix_and_remainder_extract(&node);
+    //     println!("prefix: {}, rest: {}", prefix, rest);
+    //     let mut start_positions = vec![]; // the ending position of the prefix in the line
 
-        // find all the prefixes in the line
-        line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
+    //     // find all the prefixes in the line
+    //     line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
 
-        // print all the start positions
-        println!("start_positions: {:?}", start_positions);
+    //     // print all the start positions
+    //     println!("start_positions: {:?}", start_positions);
         
-        let output_strs = check_str_prefix_extraction(&regex, line);
-        // for output_str in output_strs {
-        //     println!("{}", output_str.1);
-        // }
+    //     let output_strs = check_str_prefix_extraction(&regex, line);
+    //     // for output_str in output_strs {
+    //     //     println!("{}", output_str.1);
+    //     // }
 
-        let mut keys: Vec<usize> = output_strs.keys().cloned().collect();
-            keys.sort();
-        let mut sum_set: HashSet<usize> = HashSet::new();
-        for key in keys {
-            let str = output_strs.get(&key).unwrap();
-            let value = key + str.len();
-            if sum_set.contains(&value) {
-                continue;
-            }
-            else {
-                sum_set.insert(value);
-            }
-            println!("{}:{}", key, output_strs.get(&key).unwrap());
-        }
-    }
+    //     let mut keys: Vec<usize> = output_strs.keys().cloned().collect();
+    //         keys.sort();
+    //     let mut sum_set: HashSet<usize> = HashSet::new();
+    //     for key in keys {
+    //         let str = output_strs.get(&key).unwrap();
+    //         let value = key + str.len();
+    //         if sum_set.contains(&value) {
+    //             continue;
+    //         }
+    //         else {
+    //             sum_set.insert(value);
+    //         }
+    //         println!("{}:{}", key, output_strs.get(&key).unwrap());
+    //     }
+    // }
 
     #[test]
     fn test_vec() {

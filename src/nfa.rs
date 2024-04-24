@@ -798,4 +798,10 @@ mod test {
         let nfa = NFA::epsilon_close(nfa);
         nfa.debug_helper();
     }
+
+    #[test]
+    fn test_prefix_nfa() {
+        let nfa = nfa_from_reg("foo(d|l)");
+        nfa.debug_helper();
+    }
 }

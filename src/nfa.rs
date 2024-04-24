@@ -633,15 +633,14 @@ impl NFA {
         let min_idx = starting_idx[0]; // must be successful, since it is sorted
         
         for (i, c) in input_str.char_indices().skip_while(|(index, _)| *index < min_idx) {
-            
+
 
             let mut next_positions: HashMap<State, Vec<usize>> = HashMap::new();
             if starting_idx.contains(&(i)) {
                 for start_state in self.prefix_start_states.iter(){
                     cur_positions.insert(start_state.clone(), vec![i]);
                     if self.accept_states.contains(&start_state) {
-                        matched_strs.insert(input_str.len(), "".to_string());
-                       
+                        matched_strs.insert(i, "".to_string());
                     }
                 }
             }
@@ -694,12 +693,14 @@ impl NFA {
                         // else 
                         {
                             matched_strs.insert(start_pos, input_str[start_pos..(i+1)].to_string());
+                            // println!("matched from index {} at char {}: {}", start_pos, i, input_str[start_pos..(i+1)].to_string());
                             
                         }
                     }
                 }
             }
         }
+        // println!("end of fun {:?}", matched_strs);
         matched_strs
     }
 }
@@ -992,7 +993,7 @@ mod test {
 
     #[test]
     fn test_prefix_from_nfa_6() {
-        let mut nfa = nfa_from_reg("ab?");
+        let mut nfa = nfa_from_reg("(fd)+|fl");
         nfa.debug_helper();
         let prefix = nfa.find_prefix_from_nfa();
         println!("Prefix: {}", prefix);

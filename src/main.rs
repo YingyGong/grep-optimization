@@ -22,15 +22,14 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
     let file = File::open(filename)?;
     let reader = BufReader::new(file);
 
-    
-
     // let (prefix, rest) = cfg::prefix_and_remainder_extract(&cfg_for_regular_expression().parse(regex).unwrap().collapse());
     // println!("prefix: {} and rest {}", prefix, rest);
 
     let mut nfa = nfa::nfa_from_reg(&regex);
     let prefix = nfa.find_prefix_from_nfa();
+    // nfa.debug_helper();
 
-    if ! prefix.is_empty() {
+    if !prefix.is_empty() {
         let r = bad_char_table(prefix.as_str());
         let l = good_suffix_table(prefix.as_str());
         let f = full_shift_table(prefix.as_str());
@@ -40,7 +39,7 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
     
             let start_positions: Vec<usize> = find_prefix_boyer_moore(&prefix, &line, &r, &l, &f);
     
-            // println!("start_positions: {:?}", start_positions);
+            // println!("prefix {} with start_positions: {:?}", prefix, start_positions);
     
             if start_positions.is_empty() {
                 continue;
@@ -59,49 +58,6 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
         }
     }
     
-    
-    
-      
-
-    // for (index, line) in reader.lines().enumerate() {
-    //     let line = line?;
-
-    //     let start_positions = find_prefix_boyer_moore(&prefix, &line, &r, &l, &f);
-
-    //     let output_strs = helper::check_str_prefix_extraction(&rest, &prefix, &line, start_positions);
-
-    //     if only_matching && line_number {
-    //         // print output_str from the smallest key 
-    //         let mut keys: Vec<usize> = output_strs.keys().cloned().collect();
-    //         keys.sort();
-    //         let mut sum_set: HashSet<usize> = HashSet::new();
-    //         for key in keys {
-    //             let str = output_strs.get(&key).unwrap();
-    //             let value = key + str.len();
-    //             if sum_set.contains(&value) {
-    //                 continue;
-    //             }
-    //             else {
-    //                 sum_set.insert(value);
-    //             }
-    //             println!("{}:{}", index + 1, output_strs.get(&key).unwrap());
-    //         }
-    //         continue;
-    //     }
-    //     if only_matching {
-    //         for output_str in output_strs {
-    //             println!("{}", output_str.1);
-    //         }
-    //         continue;
-    //     }
-    //     if line_number && output_strs.len() > 0 {
-    //         println!("{}:{}", index + 1, line);
-    //         continue;
-    //     }
-    //     if output_strs.len() > 0 {
-    //         println!("{}", line);
-    //     }
-    // }
 
     Ok(())
 }

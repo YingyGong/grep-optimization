@@ -44,7 +44,7 @@ pub fn cfg_for_regular_expression() -> CFG {
         if !"{|*()+?\\.}".contains(ch) {
             cfg.add_rule("Literal", vec![tr(ch)])
         }
-    }
+    } 
     cfg.add_rule("Literal", vec![tr(0x09u8 as char)]); //tab
 
     // escaped special characters

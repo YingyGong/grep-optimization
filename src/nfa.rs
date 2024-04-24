@@ -478,9 +478,9 @@ impl NFA {
     //     }
     pub fn check_str_with_start_index(&self, input_str: &str, starting_idx: Vec<usize>) -> HashMap<usize, String> {
         assert!(!starting_idx.is_empty());
-        let mut cur_states: HashSet<State> = HashSet::new();
+        
         let mut cur_positions: HashMap<State, Vec<usize>> = HashMap::new();
-        cur_states.insert(self.start_state.clone());
+    
         if !starting_idx.is_empty() {
             cur_positions.insert(self.start_state.clone(), vec![starting_idx[0]]);
         }
@@ -496,13 +496,13 @@ impl NFA {
             }
         }
         for (i, c) in input_str.char_indices().skip_while(|(index, _)| *index < min_idx) {
-            let mut next_states: HashSet<State> = HashSet::new();
+            
 
             // this state can be reached by a vector of indexes
             let mut next_positions: HashMap<State, Vec<usize>> = HashMap::new();
             if starting_idx.contains(&(i)) {
                 cur_positions.insert(self.start_state.clone(), vec![i]);
-                cur_states.insert(self.start_state.clone());
+                
                 if self.accept_states.contains(&self.start_state) {
                     matched_strs.insert(i, "".to_string());
                 }
@@ -514,7 +514,7 @@ impl NFA {
                         match transition {
                             // if the character can lead to a next state by a valid transition
                             Transition::Char(c1) if *c1 == c => {
-                                next_states.insert(next_state.clone());
+                                
                                 // get the starting positions of the current state
                                 // if the next state is not in the hashmap, add the starting position of the current state
                                 if !next_positions.contains_key(next_state) {
@@ -537,7 +537,7 @@ impl NFA {
                     }
                 }
             }
-            cur_states = next_states;
+            
             cur_positions = next_positions;
 
             // check any matched

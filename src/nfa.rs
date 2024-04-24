@@ -448,6 +448,31 @@ impl NFA {
     }
 
 
+    // // if there is prefix
+    // pub fn check_str_with_prefix(&self, input_str: &str, prefix_len: usize, starting_idx: Vec<usize>) -> Vec<(usize, usize)> {
+    //     assert!(!starting_idx.is_empty());
+
+    //     let mut matched_idx: Vec<(usize, usize)> = Vec::new();
+
+    //     let matched_str_ending_idx = 0;
+
+    //     let min_idx = starting_idx[0]; // must be successful, since it is sorted
+
+    //     // only match from starting idx
+
+
+    //     // special case where prefix ends at the end of the string and it can be accepted
+    //     if starting_idx.contains(&input_str.len()) {
+    //         for start_state in self.prefix_start_states.iter(){
+    //             if self.accept_states.contains(&start_state) {
+    //                 matched_idx.push((input_str.len() - prefix_len, input_str.len()));
+    //             }
+    //         }
+    //     }
+    //     matched_idx
+    // }
+
+
     pub fn check_str_with_start_index(&self, input_str: &str, starting_idx: Vec<usize>) -> HashMap<usize, String> {
         assert!(!starting_idx.is_empty());
         
@@ -610,19 +635,19 @@ impl NFA {
     }
 
     
-    pub fn check_str_by_prefix(&self, starting_idx: Vec<usize>, input_str: &str) -> HashMap<usize, String>  {
+    pub fn check_str_by_prefix(&self, prefix_len: usize, starting_idx: Vec<usize>, input_str: &str) -> HashMap<usize, usize>  {
         
         assert!(!starting_idx.is_empty());
         
         let mut cur_positions: HashMap<State, Vec<usize>> = HashMap::new();
          // strings to return
-        let mut matched_strs: HashMap<usize, String> = HashMap::new();
+        let mut matched_strs: HashMap<usize, usize> = HashMap::new();
     
         if !starting_idx.is_empty() {
             for start_state in self.prefix_start_states.iter(){
                 if starting_idx.contains(&input_str.len()) {
                     if self.accept_states.contains(&start_state) {
-                        matched_strs.insert(input_str.len(), "".to_string());
+                        matched_strs.insert(input_str.len() - prefix_len, input_str.len());
                     }
                 }
                 cur_positions.insert(start_state.clone(), vec![starting_idx[0]]);
@@ -640,7 +665,7 @@ impl NFA {
                 for start_state in self.prefix_start_states.iter(){
                     cur_positions.insert(start_state.clone(), vec![i]);
                     if self.accept_states.contains(&start_state) {
-                        matched_strs.insert(i, "".to_string());
+                        matched_strs.insert(i - prefix_len, i);
                     }
                 }
             }
@@ -692,7 +717,7 @@ impl NFA {
                         // }
                         // else 
                         {
-                            matched_strs.insert(start_pos, input_str[start_pos..(i+1)].to_string());
+                            matched_strs.insert(start_pos - prefix_len, i + 1);
                             // println!("matched from index {} at char {}: {}", start_pos, i, input_str[start_pos..(i+1)].to_string());
                             
                         }

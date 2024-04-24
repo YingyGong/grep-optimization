@@ -223,7 +223,7 @@ pub fn check_str_prefix_extraction(rest: &str, prefix: &str, line: &str, start_p
 }
 
 pub fn check_str_with_nfa(nfa: &NFA, line: &str, prefix: &str, start_positions: Vec<usize>, line_number:usize) {
-    let output_strs = nfa.check_str_by_prefix(start_positions, line);
+    let output_strs = nfa.check_str_by_prefix(prefix.len(),start_positions, line);
     
 
     // for output_str in output_strs {
@@ -234,28 +234,28 @@ pub fn check_str_with_nfa(nfa: &NFA, line: &str, prefix: &str, start_positions: 
     keys.sort();
     let mut end_idx: usize = line.len() + 1;
     
-    for key in keys {
-        let str = output_strs.get(&key).unwrap();
-        let value = key + str.len();
+    for str_start in keys {
+        let str_end = output_strs.get(&str_start).unwrap();
         if end_idx == line.len() + 1 {
-            end_idx = value;
+            end_idx = *str_end;
         }
         else {
-            if value <= end_idx {
+            // if str_end < &end_idx { 
+            //     continue;
+            // }
+            if str_start < end_idx {
                 continue;
             }
-            if key < end_idx {
-                continue;
-            }
-            end_idx = value;
+            end_idx = *str_end;
         }
-        let output_str = format!("{}{}", prefix, output_strs.get(&key).unwrap());
+        let output_str = line.get(str_start..end_idx).unwrap();
         if output_str.is_empty() {
             continue;
         }
+        // println!("{}:{}, {}", line_number, str_start, end_idx);
         println!("{}:{}", line_number, output_str);
+    
     }
-
 }
 
 #[cfg(test)]

@@ -27,7 +27,7 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
     let f = full_shift_table(regex);
 
     let (prefix, rest) = cfg::prefix_and_remainder_extract(&cfg_for_regular_expression().parse(regex).unwrap().collapse());
-    println!("prefix: {} and rest {}", prefix, rest);
+    // println!("prefix: {} and rest {}", prefix, rest);
 
     if !rest.is_empty() {
         let nfa = nfa::nfa_from_reg(&rest);

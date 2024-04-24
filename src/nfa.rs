@@ -145,10 +145,8 @@ impl NFA {
                 nfa.add_transition_ch_list(char_vec, accept_state.clone());
             }
             'D' => {
-                let char_vec = 0x20u8..=0x2Eu8;
-                nfa.add_transition_ch_list(char_vec, accept_state.clone());
-                let char_vec = 0x3Au8..=0x7Eu8;
-                nfa.add_transition_ch_list(char_vec, accept_state.clone());
+                let all_chars = 0x21u8..=0x7Eu8;
+                nfa.add_transition_ch_list(all_chars, accept_state.clone());
             }
             'w' => {
                 let tab = 0x09u8;
@@ -157,9 +155,12 @@ impl NFA {
                 nfa.add_transition(nfa.start_state.clone(), Transition::Char(space as char), accept_state.clone());
             }
             'W' => {
-                let all_chars = 0x21u8..=0x7Eu8;
-                nfa.add_transition_ch_list(all_chars, accept_state.clone());
+                
 
+                let char_vec = 0x20u8..=0x2Eu8;
+                nfa.add_transition_ch_list(char_vec, accept_state.clone());
+                let char_vec = 0x3Au8..=0x7Eu8;
+                nfa.add_transition_ch_list(char_vec, accept_state.clone());
             }
             _ => (),
         }

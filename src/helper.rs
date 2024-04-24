@@ -224,9 +224,26 @@ pub fn check_str_prefix_extraction(rest: &str, prefix: &str, line: &str, start_p
 
 pub fn check_str_with_nfa(nfa: &NFA, line: &str, prefix: &str, start_positions: Vec<usize>, line_number:usize) {
     let output_strs = nfa.check_str_with_start_index(line, start_positions);
-    for output_str in output_strs {
-        println!("{}:{}{}", line_number, prefix, output_str.1);
+
+    // for output_str in output_strs {
+    //     println!("{}:{}{}", line_number, prefix, output_str.1);
+    // }
+
+    let mut keys: Vec<usize> = output_strs.keys().cloned().collect();
+    keys.sort();
+    let mut sum_set: HashSet<usize> = HashSet::new();
+    for key in keys {
+        let str = output_strs.get(&key).unwrap();
+        let value = key + str.len();
+        if sum_set.contains(&value) {
+            continue;
+        }
+        else {
+            sum_set.insert(value);
+        }
+        println!("{}:{}{}", line_number + 1, prefix, output_strs.get(&key).unwrap());
     }
+
 }
 
 #[cfg(test)]

@@ -415,6 +415,67 @@ impl NFA {
         matched_strs
     }
 
+    // pub fn check_str_with_start_index(&self, input_str: &str, starting_idx: Vec<usize>) -> HashMap<usize, String> {
+    //     assert!(!starting_idx.is_empty());
+    //     let mut cur_positions: HashMap<State, usize> = HashMap::new();
+
+    //     cur_positions.insert(self.start_state.clone(), starting_idx[0]);
+        
+    //     // strings to return
+    //     let mut matched_strs: HashMap<usize, String> = HashMap::new();
+
+    //     // only match from starting idx
+    //     let min_idx = starting_idx[0]; // must be successful, and it is sorted
+
+    //     if starting_idx.contains(&input_str.len()) {
+    //         if self.accept_states.contains(&self.start_state) {
+    //             matched_strs.insert(input_str.len(), "".to_string());
+    //         }
+    //     }
+
+    //     for (i, c) in input_str.char_indices().skip_while(|(index, _)| *index < min_idx) {
+    //         // this state can be reached by the earlist index
+    //         let mut next_positions: HashMap<State, usize> = HashMap::new();
+    //         if starting_idx.contains(&(i)) {
+    //             cur_positions.insert(self.start_state.clone(), i);
+    //             if self.accept_states.contains(&self.start_state) {
+    //                 matched_strs.insert(i, "".to_string());
+    //             }
+    //         }
+    //         // for all possible current states
+    //         for (state, &start_idx) in cur_positions.iter() {
+    //             if let Some(transitions) = self.transitions.get(state) {
+    //                 for (transition, next_state) in transitions {
+    //                     match transition {
+    //                         // if the character can lead to a next state by a valid transition
+    //                         Transition::Char(c_in_transion) if *c_in_transion == c => {
+    //                             let entry = next_positions.entry(next_state.clone()).or_default();
+    //                             if *entry > start_idx {
+    //                                 *entry = start_idx;
+    //                             }
+    //                         }
+    //                         _ => (),
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //         cur_positions = next_positions;
+
+    //         // check any matched
+    //         for accept_state in &self.accept_states {
+    //             if let Some(from_position) = cur_positions.get(accept_state) {
+    //                     if *from_position == i && (&self.start_state == accept_state) {
+    //                         matched_strs.insert(*from_position, "".to_string());
+    //                     }
+    //                     else {
+    //                         matched_strs.insert(*from_position, input_str[*from_position..(i+1)].to_string());
+                            
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //         matched_strs
+    //     }
     pub fn check_str_with_start_index(&self, input_str: &str, starting_idx: Vec<usize>) -> HashMap<usize, String> {
         assert!(!starting_idx.is_empty());
         let mut cur_states: HashSet<State> = HashSet::new();
@@ -505,7 +566,8 @@ impl NFA {
         matched_strs
 
     }
-}
+
+    }
 
 
 

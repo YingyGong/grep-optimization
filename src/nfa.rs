@@ -278,6 +278,31 @@ impl NFA {
 
     }
 
+    pub fn remove_unreachable_states(mut self) -> Self {
+        let mut reachable_states: HashSet<State> = HashSet::new();
+        let mut stack: Vec<State> = Vec::new();
+        stack.push(self.start_state.clone());
+        reachable_states.insert(self.start_state.clone());
+        while let Some(state) = stack.pop() {
+            if let Some(transitions) = self.transitions.get(&state) {
+                for (_, next_state) in transitions {
+                    if !reachable_states.contains(next_state) {
+                        reachable_states.insert(next_state.clone());
+                        stack.push(next_state.clone());
+                    }
+                }
+            }
+        }
+        let unreachable_states: Vec<State> = self.states.difference(&reachable_states).cloned().collect();
+        for state in unreachable_states {
+            self.states.remove(&state);
+            self.transitions.remove(&state);
+            self.accept_states.remove(&state);
+        }
+
+        self
+    }
+
     pub fn from_regex(node: &ASTNode) -> Self{
         match node {
             ASTNode::NonTerminal { sym, children } =>
@@ -584,7 +609,8 @@ pub fn nfa_from_reg(regex: &str) -> NFA {
     let cfg = cfg_for_regular_expression();
     let ast = cfg.parse(regex).unwrap().collapse();
     let nfa = NFA::from_regex(&ast);
-    NFA::epsilon_close(nfa)
+    let nfa = NFA::epsilon_close(nfa);
+    NFA::remove_unreachable_states(nfa)
 }
 
 

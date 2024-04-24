@@ -529,7 +529,6 @@ impl NFA {
                                                 next_start_positions.push(*start_pos);
                                             }
                                         }
-                                    
                                 }
                             }
                             _ => (),

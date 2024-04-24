@@ -203,49 +203,6 @@ pub fn prefix_and_remainder_extract(node: &ASTNode) -> (String, String) {
     }
 }
 
-pub fn check_plus_sign(s: &str) -> (String, String) {
-    // split at the first '+'
-    let mut iter = s.chars();
-    let mut before_plus = String::new();
-    let mut remainder = String::new();
-    let mut last_char: Option<char> = None;
-    loop {
-        match iter.next() {
-            Some('+') => {
-                if last_char == Some('\\') {
-                    before_plus.push('+');
-                } else {
-                    before_plus.push('+');
-                    break;
-                }
-            }
-            Some(c) => {
-                before_plus.push(c);
-                last_char = Some(c);
-            }
-            None => {
-                break;
-            }
-        }
-    }
-    for c in iter {
-        remainder.push(c);
-    }
-    (before_plus, remainder)
-}
-
-pub fn prefix_and_remainder_extract_after_plus(s: &str) -> (String, String) {
-    let (before_plus, after_plus) = check_plus_sign(s);
-    if before_plus.is_empty() {
-        let (prefix, remainder) = prefix_and_remainder_extract(&cfg_for_regular_expression().parse(s).unwrap().collapse());
-        return (prefix, remainder);
-    }
-    // println!("{:#?}",PrettyPrint(&cfg_for_regular_expression().parse(&before_plus).unwrap().collapse()));
-    let (prefix, remainder) = prefix_and_remainder_extract(&cfg_for_regular_expression().parse(&before_plus).unwrap().collapse());
-    let remainder = format!("{}{}", remainder, after_plus);
-    (prefix, remainder)
-}
-
 
 // return the common prefix, together with the remainder from s1 and s2
 fn two_str_common_prefix(s1: &str, s2: &str) -> (String, String, String) {

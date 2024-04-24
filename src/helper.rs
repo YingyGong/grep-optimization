@@ -100,16 +100,16 @@ fn reverse_vec(s: &Vec<i32>) -> Vec<i32> {
 }
 
 pub fn good_suffix_table(s: &str) -> Vec<i32> {
-    let mut L = vec![-1; s.len()];
-    let mut N = preprocess(reverse_string(&s).as_str());
-    let N = reverse_vec(&N);
+    let mut l = vec![-1; s.len()];
+    let mut n = preprocess(reverse_string(&s).as_str());
+    let n = reverse_vec(&n);
     for j in 0..(s.len() -1) {
-        let i = s.len() - N[j] as usize;
+        let i = s.len() - n[j] as usize;
         if i != s.len() {
-            L[i] = j as i32;
+            l[i] = j as i32;
         }
     }
-    L
+    l
 }
 
 pub fn full_shift_table(s: &str) -> Vec<i32> {

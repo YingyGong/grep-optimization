@@ -664,11 +664,11 @@ impl NFA {
             if starting_idx.contains(&(i)) {
                 for start_state in self.prefix_start_states.iter(){
                     // push i into the vector of starting positions of the current state
-                    if !next_positions.contains_key(start_state) {
-                        next_positions.insert(start_state.clone(), vec![i]);
+                    if !cur_positions.contains_key(start_state) {
+                        cur_positions.insert(start_state.clone(), vec![i]);
                     }
                     else {
-                        if let Some(start_positions) = next_positions.get_mut(start_state) {
+                        if let Some(start_positions) = cur_positions.get_mut(start_state) {
                             start_positions.push(i);
                         }
                     }

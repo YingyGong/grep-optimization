@@ -544,11 +544,17 @@ impl NFA {
             let mut common_char: Option<char> = None;
             let mut next_state_vec: Vec<State> = Vec::new();
             for (i, cur_state) in cur_state_vec.iter().enumerate() {
+                if self.accept_states.contains(cur_state) {
+                    break 'outer;
+                }
                 if self.transitions.contains_key(&cur_state) {
                     let transitions = self.transitions.get(&cur_state).unwrap();
                     if i == 0 {
                         let mut iter = transitions.iter();
                         if let Some((transition, state)) = iter.next() {
+                            if state == cur_state {
+                                break 'outer;
+                            }
                             if let Transition::Char(c) = transition {
                                 common_char = Some(*c);
                                 next_state_vec.push(state.clone());
@@ -572,6 +578,9 @@ impl NFA {
                     else {
                         let mut iter = transitions.iter();
                         for (transition, state) in iter {
+                            if state == cur_state {
+                                break 'outer;
+                            }
                             if let Transition::Char(c) = transition {
                                 if *c != common_char.unwrap()  {
                                     break 'outer;
@@ -678,7 +687,7 @@ impl NFA {
                     // turn start_positions into a set
                     let start_positions: HashSet<usize> = start_positions.iter().cloned().collect();
                     for start_pos in start_positions {
-                        if start_pos == i {
+                        if start_pos == i && self.prefix_start_states.contains(&accept_state) {
                             matched_strs.insert(start_pos, "".to_string());
                             // println!("matched");
                         }
@@ -964,7 +973,25 @@ mod test {
 
     #[test]
     fn test_prefix_from_nfa_4() {
-        let mut nfa = nfa_from_reg("ab?b");
+        let mut nfa = nfa_from_reg("ab*");
+        nfa.debug_helper();
+        let prefix = nfa.find_prefix_from_nfa();
+        println!("Prefix: {}", prefix);
+        println!("States: {:?}", nfa.prefix_start_states);
+    }
+
+    #[test]
+    fn test_prefix_from_nfa_5() {
+        let mut nfa = nfa_from_reg("ab+");
+        nfa.debug_helper();
+        let prefix = nfa.find_prefix_from_nfa();
+        println!("Prefix: {}", prefix);
+        println!("States: {:?}", nfa.prefix_start_states);
+    }
+
+    #[test]
+    fn test_prefix_from_nfa_6() {
+        let mut nfa = nfa_from_reg("ab?");
         nfa.debug_helper();
         let prefix = nfa.find_prefix_from_nfa();
         println!("Prefix: {}", prefix);

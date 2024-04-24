@@ -22,16 +22,17 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
     let file = File::open(filename)?;
     let reader = BufReader::new(file);
 
-    let r = bad_char_table(regex);
-    let l = good_suffix_table(regex);
-    let f = full_shift_table(regex);
+    
 
     // let (prefix, rest) = cfg::prefix_and_remainder_extract(&cfg_for_regular_expression().parse(regex).unwrap().collapse());
     // println!("prefix: {} and rest {}", prefix, rest);
 
-
     let mut nfa = nfa::nfa_from_reg(&regex);
     let prefix = nfa.find_prefix_from_nfa();
+
+    let r = bad_char_table(prefix.as_str());
+    let l = good_suffix_table(prefix.as_str());
+    let f = full_shift_table(prefix.as_str());
 
     for (index, line) in reader.lines().enumerate() {
         let line = line?;

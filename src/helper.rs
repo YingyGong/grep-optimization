@@ -132,9 +132,7 @@ pub fn find_prefix_boyer_moore(p: &str, t: &str, r: &Vec<Vec<i32>>, l: &Vec<i32>
         return Vec::new();
     }
 
-    if p.is_empty() {
-        return (0..t.len()).collect();
-    }
+    assert!(p.len() > 0);
 
     let mut matches: Vec<usize> = Vec::new();
     // let r = bad_char_table(p);

@@ -638,6 +638,7 @@ impl NFA {
     pub fn check_str_by_prefix(&self, prefix_len: usize, starting_idx: Vec<usize>, input_str: &str) -> HashMap<usize, usize>  {
         
         assert!(!starting_idx.is_empty());
+        // println!("starting idx: {:?}", starting_idx);
         
         let mut cur_positions: HashMap<State, Vec<usize>> = HashMap::new();
          // strings to return
@@ -659,11 +660,18 @@ impl NFA {
         
         for (i, c) in input_str.char_indices().skip_while(|(index, _)| *index < min_idx) {
 
-
             let mut next_positions: HashMap<State, Vec<usize>> = HashMap::new();
             if starting_idx.contains(&(i)) {
                 for start_state in self.prefix_start_states.iter(){
-                    cur_positions.insert(start_state.clone(), vec![i]);
+                    // push i into the vector of starting positions of the current state
+                    if !next_positions.contains_key(start_state) {
+                        next_positions.insert(start_state.clone(), vec![i]);
+                    }
+                    else {
+                        if let Some(start_positions) = next_positions.get_mut(start_state) {
+                            start_positions.push(i);
+                        }
+                    }
                     if self.accept_states.contains(&start_state) {
                         matched_strs.insert(i - prefix_len, i);
                     }

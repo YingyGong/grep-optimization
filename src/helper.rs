@@ -252,7 +252,7 @@ pub fn check_str_with_nfa(nfa: &NFA, line: &str, prefix: &str, start_positions: 
         if output_str.is_empty() {
             continue;
         }
-        // println!("{}:{}, {}", line_number, str_start, end_idx);
+        // println!("{}:from {} to {}", line_number, str_start, end_idx);
         println!("{}:{}", line_number, output_str);
     
     }

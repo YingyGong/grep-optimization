@@ -241,7 +241,11 @@ pub fn check_str_with_nfa(nfa: &NFA, line: &str, prefix: &str, start_positions: 
         else {
             sum_set.insert(value);
         }
-        println!("{}:{}{}", line_number, prefix, output_strs.get(&key).unwrap());
+        let output_str = format!("{}{}", prefix, output_strs.get(&key).unwrap());
+        if output_str.is_empty() {
+            continue;
+        }
+        println!("{}:{}", line_number, output_str);
     }
 
 }

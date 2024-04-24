@@ -374,6 +374,7 @@ impl NFA {
         println!("Transitions: {:?}", self.transitions);
         println!("Start state: {:?}", self.start_state);
         println!("Accept states: {:?}", self.accept_states);
+        println!("Prefix states: {:?}", self.prefix_start_states);
     }
     
     pub fn check_str_princeton(&self, input_str: &str) -> Vec<String> {
@@ -601,6 +602,7 @@ impl NFA {
 
     
     pub fn check_str_by_prefix(&self, starting_idx: Vec<usize>, input_str: &str) -> HashMap<usize, String>  {
+        
         assert!(!starting_idx.is_empty());
         
         let mut cur_positions: HashMap<State, Vec<usize>> = HashMap::new();
@@ -627,14 +629,15 @@ impl NFA {
             let mut next_positions: HashMap<State, Vec<usize>> = HashMap::new();
             if starting_idx.contains(&(i)) {
                 for start_state in self.prefix_start_states.iter(){
-                    if starting_idx.contains(&input_str.len()) {
-                        if self.accept_states.contains(&start_state) {
-                            matched_strs.insert(input_str.len(), "".to_string());
-                        }
+                    cur_positions.insert(start_state.clone(), vec![i]);
+                    if self.accept_states.contains(&start_state) {
+                        matched_strs.insert(input_str.len(), "".to_string());
+                       
                     }
-                    cur_positions.insert(start_state.clone(), vec![starting_idx[0]]);
                 }
             }
+
+            // println!("cur_positions at iter {}: {:?}", i, cur_positions);
             // for all possible current states
             for (state, start_position) in cur_positions.iter() {
                 if let Some(transitions) = self.transitions.get(state) {
@@ -675,8 +678,9 @@ impl NFA {
                     // turn start_positions into a set
                     let start_positions: HashSet<usize> = start_positions.iter().cloned().collect();
                     for start_pos in start_positions {
-                        if start_pos == i && (&self.start_state == accept_state) {
+                        if start_pos == i {
                             matched_strs.insert(start_pos, "".to_string());
+                            // println!("matched");
                         }
                         else {
                             matched_strs.insert(start_pos, input_str[start_pos..(i+1)].to_string());

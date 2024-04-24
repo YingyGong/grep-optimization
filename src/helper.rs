@@ -223,7 +223,7 @@ pub fn check_str_prefix_extraction(rest: &str, prefix: &str, line: &str, start_p
 }
 
 pub fn check_str_with_nfa(nfa: &NFA, line: &str, prefix: &str, start_positions: Vec<usize>, line_number:usize) {
-    let output_strs = nfa.check_str_with_start_index(line, start_positions);
+    let output_strs = nfa.check_str_by_prefix(start_positions, line);
     
 
     // for output_str in output_strs {

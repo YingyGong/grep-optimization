@@ -29,35 +29,25 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
     // let (prefix, rest) = cfg::prefix_and_remainder_extract(&cfg_for_regular_expression().parse(regex).unwrap().collapse());
     // println!("prefix: {} and rest {}", prefix, rest);
 
-    let prefix = "";
-    let rest = regex;
 
-    if !rest.is_empty() {
-        let nfa = nfa::nfa_from_reg(&rest);
-        // println!("{}", rest);
+    let mut nfa = nfa::nfa_from_reg(&regex);
+    let prefix = nfa.find_prefix_from_nfa();
+
+    for (index, line) in reader.lines().enumerate() {
+        let line = line?;
+
+        let start_positions = find_prefix_boyer_moore(&prefix, &line, &r, &l, &f);
+        // println!("start_positions: {:?}", start_positions);
+
+        if start_positions.is_empty() {
+            continue;
+        }
         // nfa.debug_helper();
-        for (index, line) in reader.lines().enumerate() {
-            let line = line?;
-    
-            let start_positions = find_prefix_boyer_moore(&prefix, &line, &r, &l, &f);
-            if start_positions.is_empty() {
-                continue;
-            }
-    
-            check_str_with_nfa(&nfa, &line, &prefix, start_positions, index + 1);
-        }
+        
+        check_str_with_nfa(&nfa, &line, &prefix, start_positions, index + 1);
     }
-    else {
-        for (index, line) in reader.lines().enumerate() {
-            let line = line?;
     
-            let start_positions = find_prefix_boyer_moore(&prefix, &line, &r, &l, &f);
-    
-            for _ in start_positions {
-                println!("{}:{}", index + 1, prefix);     
-            }
-        }
-    }
+      
 
     // for (index, line) in reader.lines().enumerate() {
     //     let line = line?;

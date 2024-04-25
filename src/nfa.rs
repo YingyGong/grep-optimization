@@ -645,19 +645,19 @@ impl NFA {
                 }
             }
 
-            // Check for new starting indices at this character
-            if starting_idx.contains(&i) {
-                for start_state in &self.prefix_start_states {
-                    cur_positions[start_state.id].push(i);
-                    if self.accept_states.contains(start_state) {
-                        matched_strs[i - prefix_len] = i;
-                    }
-                }
-            }
+            // // Check for new starting indices at this character
+            // if starting_idx.contains(&i) {
+            //     for start_state in &self.prefix_start_states {
+            //         cur_positions[start_state.id].push(i);
+            //         if self.accept_states.contains(start_state) {
+            //             matched_strs[i - prefix_len] = i;
+            //         }
+            //     }
+            // }
 
             cur_positions = next_positions;
 
-            // Check for matched states that are accept states
+            // check for matched states that are accept states
             for accept_state in &self.accept_states {
                 if let Some(positions) = cur_positions.get(accept_state.id) {
                     for &pos in positions {

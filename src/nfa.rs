@@ -719,11 +719,11 @@ impl NFA {
                     // turn start_positions into a set
                     let start_positions: HashSet<usize> = start_positions.iter().cloned().collect();
                     for start_pos in start_positions {
-                        // if start_pos == i && self.prefix_start_states.contains(&accept_state) {
-                        //     matched_strs.insert(start_pos, "".to_string());
-                        //     // println!("matched");
-                        // }
-                        // else 
+                        if start_pos == i && self.prefix_start_states.contains(&accept_state) {
+                            matched_strs.insert(start_pos - prefix_len, start_pos);
+                            // println!("matched");
+                        }
+                        else 
                         {
                             matched_strs.insert(start_pos - prefix_len, i + 1);
                             // println!("matched from index {} at char {}: {}", start_pos, i, input_str[start_pos..(i+1)].to_string());
@@ -1027,6 +1027,15 @@ mod test {
     #[test]
     fn test_prefix_from_nfa_6() {
         let mut nfa = nfa_from_reg("(fd)+|fl");
+        nfa.debug_helper();
+        let prefix = nfa.find_prefix_from_nfa();
+        println!("Prefix: {}", prefix);
+        println!("States: {:?}", nfa.prefix_start_states);
+    }
+
+    #[test]
+    fn test_prefix_from_nfa_7() {
+        let mut nfa = nfa_from_reg("ab*a");
         nfa.debug_helper();
         let prefix = nfa.find_prefix_from_nfa();
         println!("Prefix: {}", prefix);

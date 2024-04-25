@@ -719,16 +719,16 @@ impl NFA {
                     // turn start_positions into a set
                     let start_positions: HashSet<usize> = start_positions.iter().cloned().collect();
                     for start_pos in start_positions {
-                        if start_pos == i && self.prefix_start_states.contains(&accept_state) {
-                            matched_strs.insert(start_pos - prefix_len, start_pos);
-                            // println!("matched");
-                        }
-                        else 
-                        {
+                        // if start_pos == i && self.prefix_start_states.contains(&accept_state) {
+                        //     matched_strs.insert(start_pos - prefix_len, start_pos);
+                        //     // println!("matched");
+                        // }
+                        // else 
+                        // {
                             matched_strs.insert(start_pos - prefix_len, i + 1);
                             // println!("matched from index {} at char {}: {}", start_pos, i, input_str[start_pos..(i+1)].to_string());
                             
-                        }
+                        // }
                     }
                 }
             }

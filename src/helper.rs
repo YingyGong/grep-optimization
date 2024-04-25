@@ -248,15 +248,15 @@ pub fn helper_print_with_start(line_idx: usize, start_positions: Vec<usize>, lin
     }
 }
 
-pub fn check_str_with_nfa(nfa: &NFA, line: &str, prefix: &str, start_positions: Vec<usize>, line_number:usize) {
+// pub fn check_str_with_nfa(nfa: &NFA, line: &str, prefix: &str, start_positions: Vec<usize>, line_number:usize) {
 
-    let matched_strs = nfa.check_str_by_prefix(prefix.len(), start_positions, line);
-    if matched_strs.is_empty() {
-        return;
-    }
-    helper_print(line_number, line, matched_strs);
+//     let matched_strs = nfa.check_str_by_prefix(prefix.len(), start_positions, line);
+//     if matched_strs.is_empty() {
+//         return;
+//     }
+//     helper_print(line_number, line, matched_strs);
 
-}
+// }
 
 #[cfg(test)]
 mod tests {

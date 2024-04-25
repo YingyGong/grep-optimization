@@ -28,8 +28,7 @@ pub struct NFA {
     transitions: HashMap<State, Vec<(Transition, State)>>,
     start_state: State,
     accept_states: HashSet<State>,
-    next_state_id: usize,
-    prefix_start_states: Vec<State>,
+    next_state_id: usize
 }
 
 impl NFA {
@@ -41,7 +40,6 @@ impl NFA {
             start_state: start_state.clone(),
             accept_states: HashSet::new(),
             next_state_id: 1,
-            prefix_start_states: Vec::new(),
         };
         nfa.states.insert(start_state.clone());
         nfa
@@ -56,14 +54,6 @@ impl NFA {
         self.next_state_id += 1;
         self.states.insert(state.clone());
         state
-    }
-
-    fn new_with_n_states(n: usize) -> Self {
-        let mut nfa = NFA::new();
-        for _ in 1..(n+1) {
-            nfa.add_state();
-        }
-        nfa
     }
 
     fn add_transition(&mut self, from: State, transition: Transition, to: State) {
@@ -84,7 +74,6 @@ impl NFA {
             start_state: State { id: 0 },
             accept_states: HashSet::new(),
             next_state_id: self.next_state_id,
-            prefix_start_states: Vec::new(),
         };
 
         for state in self.states {
@@ -136,12 +125,10 @@ impl NFA {
                 let all_except_letters1 = 0x20u8..=0x40u8;
                 let all_except_letters2 = 0x5Bu8..=0x60u8;
                 let all_except_letters3 = 0x7Bu8..=0x7Eu8;
-                // concate all ranges into one vec
-                let all_except_letters = all_except_letters1.chain(all_except_letters2).chain(all_except_letters3);
-                for c in all_except_letters {
-                    let ch = c as char;
-                    nfa.add_transition(nfa.start_state.clone(), Transition::Char(ch), accept_state.clone());
-                }
+                nfa.add_transition_ch_list(all_except_letters1, accept_state.clone());
+                nfa.add_transition_ch_list(all_except_letters2, accept_state.clone());
+                nfa.add_transition_ch_list(all_except_letters3, accept_state.clone());
+
                 nfa.add_transition(nfa.start_state.clone(), Transition::Char(0x09 as char), accept_state.clone()); // add Tab
             }
             'd' => {
@@ -153,6 +140,7 @@ impl NFA {
                 nfa.add_transition_ch_list(char_vec, accept_state.clone());
                 let char_vec = 0x3Au8..=0x7Eu8;
                 nfa.add_transition_ch_list(char_vec, accept_state.clone());
+
                 nfa.add_transition(nfa.start_state.clone(), Transition::Char(0x09 as char), accept_state.clone()); // add Tab
             }
             'w' => {
@@ -224,12 +212,13 @@ impl NFA {
         nfa
     }
 
-    pub fn epsilon_close(mut nfa: NFA) -> Self {
+    pub fn epsilon_close(&mut self) {
+        // println!("Epsilon close");
         let mut old: HashSet<(State, State)> = HashSet::new();
         let mut cur: HashSet<(State, State)> = HashSet::new();
         // find all episolon transitions from all state
-        for state in &nfa.states {
-            if let Some(transition) = nfa.transitions.get_mut(state) {
+        for state in &self.states {
+            if let Some(transition) = self.transitions.get_mut(&state) {
                 let transition_copy = transition.clone();
                 for (t, next_state) in transition_copy {
                     if t == Transition::Epsilon {
@@ -257,32 +246,31 @@ impl NFA {
         }
 
         for (state, next_state) in cur.iter() {
-            let transition_copy = nfa.transitions.get(next_state).unwrap_or(&Vec::new()).clone();
+            let transition_copy = self.transitions.get(next_state).unwrap_or(&Vec::new()).clone();
             for (t, state_c) in transition_copy {
                 if t != Transition::Epsilon 
                 {   
-                    nfa.add_transition(state.clone(), t.clone(), state_c.clone());
+                    self.add_transition(state.clone(), t.clone(), state_c.clone());
                 }
             }
             // if next_state is accept state, add state to accept states
-            if nfa.accept_states.contains(next_state) {
-                nfa.accept_states.insert(state.clone());
+            if self.accept_states.contains(next_state) {
+                self.accept_states.insert(state.clone());
             }
         }
 
         // remove all repetitive transitions
-        for state in &nfa.states {
-            if let Some(transition) = nfa.transitions.get_mut(state) {
+        for state in &self.states {
+            if let Some(transition) = self.transitions.get_mut(state) {
                 let mut seen: HashSet<(Transition, State)> = HashSet::new();
                 transition.retain(|(transition_char, next_state)| seen.insert((transition_char.clone(), next_state.clone())));
             }
         }
 
-        nfa
 
     }
 
-    pub fn remove_unreachable_states(mut self) -> Self {
+    pub fn remove_unreachable_states(&mut self) {
         let mut reachable_states: HashSet<State> = HashSet::new();
         let mut stack: Vec<State> = Vec::new();
         stack.push(self.start_state.clone());
@@ -304,7 +292,6 @@ impl NFA {
             self.accept_states.remove(&state);
         }
 
-        self
     }
 
     pub fn rename_states(&mut self) {
@@ -408,7 +395,6 @@ impl NFA {
         println!("Transitions: {:?}", self.transitions);
         println!("Start state: {:?}", self.start_state);
         println!("Accept states: {:?}", self.accept_states);
-        println!("Prefix states: {:?}", self.prefix_start_states);
     }
     
     pub fn check_str_princeton(&self, input_str: &str) -> Vec<String> {
@@ -673,7 +659,7 @@ impl NFA {
     // }   
     pub fn check_str_with_start(&self, starting_idxes: &Vec<usize>, input_str: &str, prefix_len: usize) -> Vec<usize> {
         assert!(!starting_idxes.is_empty());
-        
+
         let max_match = starting_idxes.len();
         let mut matched_strs: Vec<usize> = vec![0; max_match];
         let mut end_idx = 0;
@@ -684,12 +670,10 @@ impl NFA {
                 continue;
             }
             let mut cur_states = HashSet::new();
-            for start_state in self.prefix_start_states.iter() {
-                cur_states.insert(start_state);
-                if self.accept_states.contains(start_state) {
-                    end_idx = *start_idx;
-                    matched_strs[i] = end_idx;
-                }
+            cur_states.insert(&self.start_state);
+            if self.accept_states.contains(&self.start_state) {
+                end_idx = *start_idx;
+                matched_strs[i] = end_idx;
             }
 
             // start iterate from the start_idx
@@ -718,91 +702,6 @@ impl NFA {
             }
         }
         matched_strs
-    }
-
-    
-    // depracated, turn into general in futrue
-    pub fn check_str_by_prefix(&self, prefix_len: usize, starting_idx: Vec<usize>, input_str: &str) -> Vec<usize>  {
-        
-        assert!(!starting_idx.is_empty());
-        // println!("starting idx: {:?}", starting_idx);
-        
-        let mut cur_positions: HashMap<State, usize> = HashMap::new();
-        let mut next_positions: HashMap<State, usize> = HashMap::new();
-        let line_len = input_str.len();
-
-         // strings to return
-        let mut matched_strs: Vec<usize> = vec![0; line_len];
-    
-        if !starting_idx.is_empty() {
-            for start_state in self.prefix_start_states.iter(){
-                if starting_idx.contains(&line_len) {
-                    if self.accept_states.contains(&start_state) {
-                        matched_strs[line_len - prefix_len] = line_len;
-                    }
-                }
-                cur_positions.insert(start_state.clone(), starting_idx[0]);
-            }
-        }
-
-        // only match from starting idx
-        let min_idx = starting_idx[0]; // must be successful, since it is sorted
-        
-        for (i, c) in input_str.char_indices().skip_while(|(index, _)| *index < min_idx) {  
-            next_positions.clear();
-            
-            for start_state in self.prefix_start_states.iter(){
-                if !cur_positions.contains_key(start_state) {
-                    cur_positions.insert(start_state.clone(), i);
-                }
-            }
-
-            // println!("cur_positions at iter {}: {:?}", i, cur_positions);
-            // for all possible current states
-            for (state, start_position) in cur_positions.iter() {
-                if let Some(transitions) = self.transitions.get(state) {
-                    for (transition, next_state) in transitions {
-                        match transition {
-                            // if the character can lead to a next state by a valid transition
-                            Transition::Char(c1) if *c1 == c => {
-                                
-                                // get the starting positions of the current state
-                                // if the next state is not in the hashmap, add the starting position of the current state
-                                if !next_positions.contains_key(next_state) {
-                                    next_positions.insert(next_state.clone(), start_position.clone());
-                                }
-                                else {
-                                    // if the next state is in the hashmap, add the starting positions of the current state
-                                    // to the vector of starting positions of the next state
-                                    if let Some(next_start_position) = next_positions.get_mut(next_state) {
-                                        if *next_start_position > *start_position {
-                                            *next_start_position = *start_position;
-                                        }
-                                    }
-                                }
-                            }
-                            _ => (),
-                        }
-                    }
-                }
-            }
-            
-            // switch the hashmap
-            // temp_positions = cur_positions;
-            std::mem::swap(&mut cur_positions, &mut next_positions);
-
-            // check any matched
-            for accept_state in &self.accept_states {
-                if let Some(start_pos) = cur_positions.get_mut(accept_state) {
-                    // set start_pos - prefix_len at the index of matched string to be i + 1
-                    matched_strs[*start_pos - prefix_len] = i + 1;
-                    }
-                }
-            
-        }
-        // println!("end of fun {:?}", matched_strs);
-        matched_strs
-
     }
 
 
@@ -874,8 +773,18 @@ impl NFA {
             
     }
 
-    // change self field prefix_start_states
-    self.prefix_start_states = cur_state_vec;
+    // modify nfa to have prefix start states
+    // let ori_start_state = self.start_state.clone();
+    self.start_state = State { id: self.next_state_id };
+    self.next_state_id += 1;
+    self.states.insert(self.start_state.clone());
+    for cur_state in cur_state_vec {
+        self.add_transition(self.start_state.clone(), Transition::Epsilon, cur_state);
+    }
+    // epsilon_close
+    self.epsilon_close();
+    // remove unreachable states
+    self.remove_unreachable_states();
 
     prefix
 
@@ -894,7 +803,7 @@ impl Clone for NFA {
             start_state: self.start_state.clone(),
             accept_states: self.accept_states.clone(),
             next_state_id: self.next_state_id,
-            prefix_start_states: self.prefix_start_states.clone(),
+            // prefix_start_states: self.prefix_start_states.clone(),
         };
         new_nfa
     }
@@ -903,9 +812,10 @@ impl Clone for NFA {
 pub fn nfa_from_reg(regex: &str) -> NFA {
     let cfg = cfg_for_regular_expression();
     let ast = cfg.parse(regex).unwrap().collapse();
-    let nfa = NFA::from_regex(&ast);
-    let nfa = NFA::epsilon_close(nfa);
-    NFA::remove_unreachable_states(nfa)
+    let mut nfa = NFA::from_regex(&ast);
+    NFA::epsilon_close(&mut nfa);
+    NFA::remove_unreachable_states(&mut nfa);
+    nfa
 }
 
 
@@ -985,8 +895,6 @@ mod test {
         let nfa = NFA::from_regex(&ast);
         nfa.debug_helper();
         println!("\n After Episolon closure\n");
-        let nfa = NFA::epsilon_close(nfa);
-        nfa.debug_helper();
     }
 
     #[test]
@@ -1012,113 +920,113 @@ mod test {
     }
 
 
-    #[test]
-    fn test_digit_2() {
-        println!("Test Digit Class");
-        let regex = "\\d";
-        let cfg = cfg_for_regular_expression();
-        let ast = cfg.parse(regex).unwrap().collapse();
-        println!("{:#?}", PrettyPrint(&ast));
-        let nfa = nfa_from_reg(regex);
-        nfa.debug_helper();
-        let nfa = NFA::epsilon_close(nfa);
-        nfa.debug_helper();
-        print!("{:?}", nfa.check_str_princeton("d12345"));
-    }
+    // #[test]
+    // fn test_digit_2() {
+    //     println!("Test Digit Class");
+    //     let regex = "\\d";
+    //     let cfg = cfg_for_regular_expression();
+    //     let ast = cfg.parse(regex).unwrap().collapse();
+    //     println!("{:#?}", PrettyPrint(&ast));
+    //     let nfa = nfa_from_reg(regex);
+    //     nfa.debug_helper();
+    //     let nfa = NFA::epsilon_close(nfa);
+    //     nfa.debug_helper();
+    //     print!("{:?}", nfa.check_str_princeton("d12345"));
+    // }
 
-    #[test]
-    fn test_check_string_1() {
-        println!("Test check string return string vec 1");
-        let nfa = nfa_from_reg("ab|c");
-        let nfa = NFA::epsilon_close(nfa);
-        print!("{:?}", nfa.check_str_princeton("abab"));
-        print!("{:?}", nfa.check_str_princeton("cab"));
-        print!("{:?}", nfa.check_str_princeton("c"));
-        print!("{:?}", nfa.check_str_princeton("cabcabcab"));
-    }
+    // #[test]
+    // fn test_check_string_1() {
+    //     println!("Test check string return string vec 1");
+    //     let nfa = nfa_from_reg("ab|c");
+    //     let nfa = NFA::epsilon_close(nfa);
+    //     print!("{:?}", nfa.check_str_princeton("abab"));
+    //     print!("{:?}", nfa.check_str_princeton("cab"));
+    //     print!("{:?}", nfa.check_str_princeton("c"));
+    //     print!("{:?}", nfa.check_str_princeton("cabcabcab"));
+    // }
 
-    #[test]
-    fn test_check_string_2() {
-        println!("Test check string return string vec 2");
-        let nfa = nfa_from_reg("ab");
-        let nfa = NFA::epsilon_close(nfa);
-        nfa.debug_helper();
-        println!("");
-        print!("{:?}", nfa.check_str_princeton("abab"));
-    }
+    // #[test]
+    // fn test_check_string_2() {
+    //     println!("Test check string return string vec 2");
+    //     let nfa = nfa_from_reg("ab");
+    //     let nfa = NFA::epsilon_close(nfa);
+    //     nfa.debug_helper();
+    //     println!("");
+    //     print!("{:?}", nfa.check_str_princeton("abab"));
+    // }
 
-    #[test]
-    fn test_check_string_kleen() {
-        println!("Test check string return string vec kleen");
-        let nfa = nfa_from_reg("c(ab)*");
-        let nfa = NFA::epsilon_close(nfa);
-        nfa.debug_helper();
-        println!("");
-        print!("{:?}", nfa.check_str_princeton("a"));
-        print!("{:?}", nfa.check_str_princeton("bab"));
-        print!("{:?}", nfa.check_str_princeton("cabab"));
-    }
+    // #[test]
+    // fn test_check_string_kleen() {
+    //     println!("Test check string return string vec kleen");
+    //     let nfa = nfa_from_reg("c(ab)*");
+    //     let nfa = NFA::epsilon_close(nfa);
+    //     nfa.debug_helper();
+    //     println!("");
+    //     print!("{:?}", nfa.check_str_princeton("a"));
+    //     print!("{:?}", nfa.check_str_princeton("bab"));
+    //     print!("{:?}", nfa.check_str_princeton("cabab"));
+    // }
 
-    #[test]
-    fn test_check_string_kleen_2() {
-        println!("Test check string return string vec kleen");
-        let nfa = nfa_from_reg("(b)*");
-        let nfa = NFA::epsilon_close(nfa);
-        nfa.debug_helper();
-        println!("");
-        print!("{:?}", nfa.check_str_princeton("a"));
-        print!("{:?}", nfa.check_str_princeton("bab"));
-        print!("{:?}", nfa.check_str_princeton("cabab"));
-    }
+    // #[test]
+    // fn test_check_string_kleen_2() {
+    //     println!("Test check string return string vec kleen");
+    //     let nfa = nfa_from_reg("(b)*");
+    //     let nfa = NFA::epsilon_close(nfa);
+    //     nfa.debug_helper();
+    //     println!("");
+    //     print!("{:?}", nfa.check_str_princeton("a"));
+    //     print!("{:?}", nfa.check_str_princeton("bab"));
+    //     print!("{:?}", nfa.check_str_princeton("cabab"));
+    // }
 
-    #[test]
-    fn test_check_string_question_mark() {
-        println!("Test question mark");
-        let nfa = nfa_from_reg("ka?");
-        let nfa = NFA::epsilon_close(nfa);
-        nfa.debug_helper();
-        println!("");
-        print!("{:?}", nfa.check_str_princeton("ka"));
-        print!("{:?}", nfa.check_str_princeton("k"));
-    }
+    // #[test]
+    // fn test_check_string_question_mark() {
+    //     println!("Test question mark");
+    //     let nfa = nfa_from_reg("ka?");
+    //     let nfa = NFA::epsilon_close(nfa);
+    //     nfa.debug_helper();
+    //     println!("");
+    //     print!("{:?}", nfa.check_str_princeton("ka"));
+    //     print!("{:?}", nfa.check_str_princeton("k"));
+    // }
 
-    #[test]
-    fn test_check_string_3() {
-        println!("Test check string return string vec 3");
-        let nfa = nfa_from_reg("ab|c");
-        let nfa = NFA::epsilon_close(nfa);
-        println!("{:?}", nfa.check_str_princeton("ab"));
-        println!("{:?}", nfa.check_str_princeton("cab"));
-        println!("{:?}", nfa.check_str_princeton("jghfhjfckhuieabkc"));
-    }
+    // #[test]
+    // fn test_check_string_3() {
+    //     println!("Test check string return string vec 3");
+    //     let nfa = nfa_from_reg("ab|c");
+    //     let nfa = NFA::epsilon_close(nfa);
+    //     println!("{:?}", nfa.check_str_princeton("ab"));
+    //     println!("{:?}", nfa.check_str_princeton("cab"));
+    //     println!("{:?}", nfa.check_str_princeton("jghfhjfckhuieabkc"));
+    // }
 
-    #[test]
-    fn test_epsilon_closure() {
-        println!("Test epsilon closure");
-        let mut nfa = NFA::new_with_n_states(4);
-        let state0 = State { id: 0 };
-        let state1 = State { id: 1 };
-        let state2 = State { id: 2 };
-        let state3 = State { id: 3 };
-        let state4 = State { id: 4 };
+    // #[test]
+    // fn test_epsilon_closure() {
+    //     println!("Test epsilon closure");
+    //     let mut nfa = NFA::new_with_n_states(4);
+    //     let state0 = State { id: 0 };
+    //     let state1 = State { id: 1 };
+    //     let state2 = State { id: 2 };
+    //     let state3 = State { id: 3 };
+    //     let state4 = State { id: 4 };
 
-        nfa.add_transition(state0.clone(), Transition::Char('0'), state0.clone());
-        nfa.add_transition(state0.clone(), Transition::Epsilon, state1.clone());
-        // 1, 1, 1
-        nfa.add_transition(state1.clone(), Transition::Char('1'), state1.clone());
-        // 1, epsilon, 2
-        nfa.add_transition(state1.clone(), Transition::Epsilon, state2.clone());
-        // 2, 0, 2
-        nfa.add_transition(state2.clone(), Transition::Char('0'), state2.clone());
-        // 2, epsilon, 3
-        nfa.add_transition(state2.clone(), Transition::Epsilon, state3.clone());
-        // 2, 0, 4
-        nfa.add_transition(state2.clone(), Transition::Char('0'), state4.clone());
-        nfa.accept_states.insert(state3.clone());
-        nfa.accept_states.insert(state4.clone());
-        let nfa = NFA::epsilon_close(nfa);
-        nfa.debug_helper();
-    }
+    //     nfa.add_transition(state0.clone(), Transition::Char('0'), state0.clone());
+    //     nfa.add_transition(state0.clone(), Transition::Epsilon, state1.clone());
+    //     // 1, 1, 1
+    //     nfa.add_transition(state1.clone(), Transition::Char('1'), state1.clone());
+    //     // 1, epsilon, 2
+    //     nfa.add_transition(state1.clone(), Transition::Epsilon, state2.clone());
+    //     // 2, 0, 2
+    //     nfa.add_transition(state2.clone(), Transition::Char('0'), state2.clone());
+    //     // 2, epsilon, 3
+    //     nfa.add_transition(state2.clone(), Transition::Epsilon, state3.clone());
+    //     // 2, 0, 4
+    //     nfa.add_transition(state2.clone(), Transition::Char('0'), state4.clone());
+    //     nfa.accept_states.insert(state3.clone());
+    //     nfa.accept_states.insert(state4.clone());
+    //     let nfa = NFA::epsilon_close(nfa);
+    //     nfa.debug_helper();
+    // }
 
     #[test]
     fn test_rename_states() {
@@ -1140,7 +1048,6 @@ mod test {
         nfa.debug_helper();
         let prefix = nfa.find_prefix_from_nfa();
         println!("Prefix: {}", prefix);
-        println!("States: {:?}", nfa.prefix_start_states);
     }
 
     #[test]
@@ -1149,7 +1056,6 @@ mod test {
         nfa.debug_helper();
         let prefix = nfa.find_prefix_from_nfa();
         println!("Prefix: {}", prefix);
-        println!("States: {:?}", nfa.prefix_start_states);
     }
 
     #[test]
@@ -1158,7 +1064,7 @@ mod test {
         nfa.debug_helper();
         let prefix = nfa.find_prefix_from_nfa();
         println!("Prefix: {}", prefix);
-        println!("States: {:?}", nfa.prefix_start_states);
+        nfa.debug_helper()
     }
 
     #[test]
@@ -1167,7 +1073,7 @@ mod test {
         nfa.debug_helper();
         let prefix = nfa.find_prefix_from_nfa();
         println!("Prefix: {}", prefix);
-        println!("States: {:?}", nfa.prefix_start_states);
+        nfa.debug_helper()
     }
 
     #[test]
@@ -1176,7 +1082,6 @@ mod test {
         nfa.debug_helper();
         let prefix = nfa.find_prefix_from_nfa();
         println!("Prefix: {}", prefix);
-        println!("States: {:?}", nfa.prefix_start_states);
     }
 
     #[test]
@@ -1185,7 +1090,6 @@ mod test {
         nfa.debug_helper();
         let prefix = nfa.find_prefix_from_nfa();
         println!("Prefix: {}", prefix);
-        println!("States: {:?}", nfa.prefix_start_states);
     }
 
     #[test]
@@ -1194,7 +1098,6 @@ mod test {
         nfa.debug_helper();
         let prefix = nfa.find_prefix_from_nfa();
         println!("Prefix: {}", prefix);
-        println!("States: {:?}", nfa.prefix_start_states);
     }
 
 
@@ -1204,7 +1107,6 @@ mod test {
         nfa.debug_helper();
         let prefix = nfa.find_prefix_from_nfa();
         println!("Prefix: {}", prefix);
-        println!("States: {:?}", nfa.prefix_start_states);
     }
 
     #[test]

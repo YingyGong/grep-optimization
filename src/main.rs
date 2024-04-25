@@ -7,7 +7,7 @@ mod helper;
 use crate::nfa::NFA;
 use crate::earley_parse::CFG;
 use crate::cfg::cfg_for_regular_expression;
-use crate::helper::{bad_char_table, good_suffix_table, full_shift_table, find_prefix_boyer_moore, check_str_with_nfa, helper_print, helper_print_with_start};
+use crate::helper::{bad_char_table, good_suffix_table, full_shift_table, find_prefix_boyer_moore, helper_print, helper_print_with_start};
 use std::collections::HashSet;
 use std::env;
 use std::error::Error;
@@ -26,6 +26,8 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
     // println!("prefix: {} and rest {}", prefix, rest);
 
     let mut nfa = nfa::nfa_from_reg(&regex);
+    // nfa.debug_helper();
+
     let prefix = nfa.find_prefix_from_nfa();
     // nfa.debug_helper();
 

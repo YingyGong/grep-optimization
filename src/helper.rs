@@ -235,12 +235,12 @@ pub fn helper_print(line_idx: usize, line: &str, output_strs: Vec<usize>){
     }
 }
 
-pub fn helper_print_with_start(line_idx: usize, start_positions: Vec<usize>, line: &str, output_strs: Vec<usize>) {
+pub fn helper_print_with_start(line_idx: usize, start_positions: Vec<usize>, line: &str, output_strs: Vec<usize>, prefix_len: usize) {
     for (i, end_idx) in output_strs.iter().enumerate(){
         if *end_idx == 0 {
             continue;
         }
-        let start_idx = start_positions[i];
+        let start_idx = start_positions[i] - prefix_len;
         println!("{}:{}", line_idx, line.get(start_idx..*end_idx).unwrap());
     }
 }

@@ -684,6 +684,10 @@ impl NFA {
             let mut cur_states = HashSet::new();
             for start_state in self.prefix_start_states.iter() {
                 cur_states.insert(start_state);
+                if self.accept_states.contains(start_state) {
+                    end_idx = *start_idx;
+                    matched_strs[i] = end_idx;
+                }
             }
 
             // start iterate from the start_idx

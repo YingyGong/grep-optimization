@@ -628,6 +628,14 @@ impl NFA {
                                 if !next_positions.contains_key(next_state) {
                                     next_positions.insert(next_state.clone(), start_position.clone());
                                 }
+                                // else check if the cur start_position can be smaller
+                                else {
+                                    if let Some(next_start_position) = next_positions.get_mut(next_state) {
+                                        if *next_start_position > *start_position {
+                                            *next_start_position = *start_position;
+                                        }
+                                    }
+                                }
                                 
                             }
                             _ => (),

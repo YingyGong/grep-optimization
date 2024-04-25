@@ -593,6 +593,7 @@ impl NFA {
 
     }
 
+
     pub fn check_str_without_start(&self, input_str: &str) -> Vec<usize> {
         let mut cur_positions: HashMap<State, usize> = HashMap::new();
         let mut next_positions: HashMap<State, usize> = HashMap::new();
@@ -656,29 +657,43 @@ impl NFA {
                     // println!("matched from index {} at char {}: {}", *start_pos, i, input_str[*start_pos..(i+1)].to_string());
                 }
             }
+
+
     }
     matched_strs
 }
 
-    pub fn check_str_by_prefix(&self, prefix_len: usize, starting_idx: Vec<usize>, input_str: &str) -> HashMap<usize, usize>  {
+    // pub fn check_str_with_start(&self, starting_idx: Vec<usize>, input_str: &str) -> Vec<usize> {
+    //     assert!(!starting_idx.is_empty());
+        
+    //     let mut cur_positions: HashMap<State, usize> = HashMap::new();
+    //     let mut next_positions: HashMap<State, usize> = HashMap::new();
+
+    
+    // }   
+
+    
+    // depracated, turn into general in futrue
+    pub fn check_str_by_prefix(&self, prefix_len: usize, starting_idx: Vec<usize>, input_str: &str) -> Vec<usize>  {
         
         assert!(!starting_idx.is_empty());
         // println!("starting idx: {:?}", starting_idx);
         
-        let mut cur_positions: HashMap<State, Vec<usize>> = HashMap::new();
-        let mut next_positions: HashMap<State, Vec<usize>> = HashMap::new();
+        let mut cur_positions: HashMap<State, usize> = HashMap::new();
+        let mut next_positions: HashMap<State, usize> = HashMap::new();
+        let line_len = input_str.len();
 
          // strings to return
-        let mut matched_strs: HashMap<usize, usize> = HashMap::new();
+        let mut matched_strs: Vec<usize> = vec![0; line_len];
     
         if !starting_idx.is_empty() {
             for start_state in self.prefix_start_states.iter(){
-                if starting_idx.contains(&input_str.len()) {
+                if starting_idx.contains(&line_len) {
                     if self.accept_states.contains(&start_state) {
-                        matched_strs.insert(input_str.len() - prefix_len, input_str.len());
+                        matched_strs[line_len - prefix_len] = line_len;
                     }
                 }
-                cur_positions.insert(start_state.clone(), vec![starting_idx[0]]);
+                cur_positions.insert(start_state.clone(), starting_idx[0]);
             }
         }
 
@@ -687,20 +702,10 @@ impl NFA {
         
         for (i, c) in input_str.char_indices().skip_while(|(index, _)| *index < min_idx) {  
             next_positions.clear();
-            if starting_idx.contains(&(i)) {
-                for start_state in self.prefix_start_states.iter(){
-                    // push i into the vector of starting positions of the current state
-                    if !cur_positions.contains_key(start_state) {
-                        cur_positions.insert(start_state.clone(), vec![i]);
-                    }
-                    else {
-                        if let Some(start_positions) = cur_positions.get_mut(start_state) {
-                            start_positions.push(i);
-                        }
-                    }
-                    if self.accept_states.contains(&start_state) {
-                        matched_strs.insert(i - prefix_len, i);
-                    }
+            
+            for start_state in self.prefix_start_states.iter(){
+                if !cur_positions.contains_key(start_state) {
+                    cur_positions.insert(start_state.clone(), i);
                 }
             }
 
@@ -721,12 +726,11 @@ impl NFA {
                                 else {
                                     // if the next state is in the hashmap, add the starting positions of the current state
                                     // to the vector of starting positions of the next state
-                                    
-                                        if let Some(next_start_positions) = next_positions.get_mut(next_state) {
-                                            for start_pos in start_position {
-                                                next_start_positions.push(*start_pos);
-                                            }
+                                    if let Some(next_start_position) = next_positions.get_mut(next_state) {
+                                        if *next_start_position > *start_position {
+                                            *next_start_position = *start_position;
                                         }
+                                    }
                                 }
                             }
                             _ => (),
@@ -741,28 +745,16 @@ impl NFA {
 
             // check any matched
             for accept_state in &self.accept_states {
-                if let Some(start_positions) = cur_positions.get_mut(accept_state) {
-                    // sort the start positions in ascending order
-                    start_positions.sort();
-                    // turn start_positions into a set
-                    let start_positions: HashSet<usize> = start_positions.iter().cloned().collect();
-                    for start_pos in start_positions {
-                        // if start_pos == i && self.prefix_start_states.contains(&accept_state) {
-                        //     matched_strs.insert(start_pos - prefix_len, start_pos);
-                        //     // println!("matched");
-                        // }
-                        // else 
-                        // {
-                            matched_strs.insert(start_pos - prefix_len, i + 1);
-                            // println!("matched from index {} at char {}: {}", start_pos, i, input_str[start_pos..(i+1)].to_string());
-                            
-                        // }
+                if let Some(start_pos) = cur_positions.get_mut(accept_state) {
+                    // set start_pos - prefix_len at the index of matched string to be i + 1
+                    matched_strs[*start_pos - prefix_len] = i + 1;
                     }
                 }
-            }
+            
         }
         // println!("end of fun {:?}", matched_strs);
         matched_strs
+
     }
 
 

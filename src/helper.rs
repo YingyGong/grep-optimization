@@ -222,6 +222,19 @@ pub fn check_str_prefix_extraction(rest: &str, prefix: &str, line: &str, start_p
     output_strs_with_prefix
 }
 
+pub fn helper_print(line_idx: usize, line: &str, output_strs: Vec<usize>){
+    let mut end_idx: isize = -1;
+    for (str_start, str_end) in output_strs.iter().enumerate() {
+        if *str_end == 0 {
+            continue;
+        }
+        if str_start as isize > end_idx {
+            end_idx = *str_end as isize;
+            println!("{}:{}", line_idx, line.get(str_start..*str_end).unwrap());
+        }
+    }
+}
+
 pub fn check_str_with_nfa(nfa: &NFA, line: &str, prefix: &str, start_positions: Vec<usize>, line_number:usize) {
     let output_strs = nfa.check_str_by_prefix(prefix.len(),start_positions, line);
     // println!("output_strs: {:?}", output_strs);

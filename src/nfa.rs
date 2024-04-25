@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::vec;
 use crate::earley_parse::{ASTNode};
+use crate::helper::{helper_print};
 use std::str::FromStr;
 use crate::earley_parse::CFG;
 use crate::cfg::cfg_for_regular_expression;
@@ -592,7 +593,64 @@ impl NFA {
 
     }
 
-    // pub fn check_str_without_start(&self, input_str: &str) -> Vec
+    pub fn check_str_without_start(&self, input_str: &str) -> Vec<usize> {
+        let mut cur_positions: HashMap<State, usize> = HashMap::new();
+        let mut next_positions: HashMap<State, usize> = HashMap::new();
+
+        let line_len = input_str.len();
+
+        // strings to return
+        let mut matched_strs: Vec<usize> = vec![0; line_len];
+        // println!("initial matched_strs: {:?}", matched_strs);
+       
+        for (i, c) in input_str.char_indices() {
+            next_positions.clear();
+            
+            if !cur_positions.contains_key(&self.start_state) {
+                cur_positions.insert(self.start_state.clone(), i);
+            }
+
+            // if self.accept_states.contains(&self.start_state) {
+            //     matched_strs.insert(i, 1);
+            // }
+
+            // println!("positions before iter {}: {:?}", i, cur_positions);
+            // for all possible current states
+            for (state, start_position) in cur_positions.iter() {
+                if let Some(transitions) = self.transitions.get(state) {
+                    for (transition, next_state) in transitions {
+                        match transition {
+                            // if the character can lead to a next state by a valid transition
+                            Transition::Char(c1) if *c1 == c => {
+                                
+                                // get the starting positions of the current state
+                                // if the next state is not in the hashmap, add the starting position of the current state
+                                if !next_positions.contains_key(next_state) {
+                                    next_positions.insert(next_state.clone(), start_position.clone());
+                                }
+                                
+                            }
+                            _ => (),
+                        }
+                    }
+                }
+            }
+            
+            // switch the hashmap
+            // temp_positions = cur_positions;
+            std::mem::swap(&mut cur_positions, &mut next_positions);
+            // println!("positions after iter {}: {:?}", i, cur_positions);
+
+            // check any matched
+            for accept_state in &self.accept_states {
+                if let Some(start_pos) = cur_positions.get_mut(accept_state) {
+                    matched_strs[*start_pos] = i + 1;
+                    // println!("matched from index {} at char {}: {}", *start_pos, i, input_str[*start_pos..(i+1)].to_string());
+                }
+            }
+    }
+    matched_strs
+}
 
     pub fn check_str_by_prefix(&self, prefix_len: usize, starting_idx: Vec<usize>, input_str: &str) -> HashMap<usize, usize>  {
         
@@ -602,8 +660,6 @@ impl NFA {
         let mut cur_positions: HashMap<State, Vec<usize>> = HashMap::new();
         let mut next_positions: HashMap<State, Vec<usize>> = HashMap::new();
 
-        // let mut next_positions: HashMap<State, Vec<usize>> = HashMap::new();
-        // let mut temp_positions: HashMap<State, Vec<usize>> = HashMap::new();
          // strings to return
         let mut matched_strs: HashMap<usize, usize> = HashMap::new();
     
@@ -1101,5 +1157,22 @@ mod test {
         let prefix = nfa.find_prefix_from_nfa();
         println!("Prefix: {}", prefix);
         println!("States: {:?}", nfa.prefix_start_states);
+    }
+
+    #[test]
+    fn test_check_str_without_start_1() {
+        let nfa = nfa_from_reg("ab|c");
+        nfa.debug_helper();
+        let matched_strs = nfa.check_str_without_start("ab");
+        println!("{:?}", matched_strs);
+    }
+
+    #[test]
+    fn test_check_str_without_start_2() {
+        let nfa = nfa_from_reg("k*");
+        nfa.debug_helper();
+        let str = "kabk";
+        let matched_strs = nfa.check_str_without_start(&str);
+        helper_print(1, &str, matched_strs);
     }
 }

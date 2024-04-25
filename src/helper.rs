@@ -225,41 +225,22 @@ pub fn check_str_prefix_extraction(rest: &str, prefix: &str, line: &str, start_p
 pub fn check_str_with_nfa(nfa: &NFA, line: &str, prefix: &str, start_positions: Vec<usize>, line_number:usize) {
     let output_strs = nfa.check_str_by_prefix(prefix.len(),start_positions, line);
     // println!("output_strs: {:?}", output_strs);
-    
 
-    // for output_str in output_strs {
-    //     println!("{}:{}{}", line_number, prefix, output_str.1);
-    // }
-
-    // for output_str in output_strs {
-    //     println!("{}:{}", line_number, line.get(output_str.0..output_str.1).unwrap());
-    // }
-
-    let mut keys: Vec<usize> = output_strs.keys().cloned().collect();
-    keys.sort();
-    let mut end_idx: usize = line.len() + 1;
-    
-    for str_start in keys {
-        let str_end = output_strs.get(&str_start).unwrap();
-        if end_idx == line.len() + 1 {
-            end_idx = *str_end;
+    let mut end_idx = 0;
+    for (str_start, str_end) in output_strs.iter().enumerate() {
+        if *str_end == 0 {
+            continue;
+        }
+        if str_start < end_idx {
+            continue;
         }
         else {
-            // if str_end < &end_idx { 
-            //     continue;
-            // }
-            if str_start < end_idx {
-                continue;
+            let output_str = &line[str_start..*str_end];
+            if !output_str.is_empty() {
+                println!("{}:{}", line_number, output_str);
             }
             end_idx = *str_end;
         }
-        let output_str = line.get(str_start..end_idx).unwrap();
-        if output_str.is_empty() {
-            continue;
-        }
-        // println!("{}:from {} to {}", line_number, str_start, end_idx);
-        println!("{}:{}", line_number, output_str);
-    
     }
 }
 

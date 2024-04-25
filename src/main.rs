@@ -49,11 +49,13 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
             check_str_with_nfa(&nfa, &line, &prefix, start_positions, index + 1);
         }
     }
-
     else {
         for (index, line) in reader.lines().enumerate() {
             let line = line?;
             let start_positions: Vec<usize> = (0..line.len()).collect();
+            if start_positions.is_empty() {
+                continue;
+            }
             check_str_with_nfa(&nfa, &line, &prefix, start_positions, index + 1);
         }
     }

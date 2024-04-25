@@ -306,6 +306,39 @@ impl NFA {
         self
     }
 
+    pub fn rename_states(&mut self) {
+        // rename states from 0 as consecutive integers
+        let mut state_map: HashMap<State, State> = HashMap::new();
+        let mut new_states: HashSet<State> = HashSet::new();
+        let mut new_transitions: HashMap<State, Vec<(Transition, State)>> = HashMap::new();
+        let mut new_accept_states: HashSet<State> = HashSet::new();
+        let mut new_start_state: State = State { id: 0 };
+        let mut new_next_state_id: usize = 1;
+        for state in &self.states {
+            let new_state = State { id: new_next_state_id };
+            state_map.insert(state.clone(), new_state.clone());
+            new_states.insert(new_state.clone());
+            new_next_state_id += 1;
+        }
+        new_start_state = state_map.get(&self.start_state).unwrap().clone();
+        for state in &self.accept_states {
+            new_accept_states.insert(state_map.get(state).unwrap().clone());
+        }
+        for (state, transitions) in &self.transitions {
+            let mut new_transitions_vec: Vec<(Transition, State)> = Vec::new();
+            for (transition, next_state) in transitions {
+                new_transitions_vec.push((transition.clone(), state_map.get(next_state).unwrap().clone()));
+            }
+            new_transitions.insert(state_map.get(state).unwrap().clone(), new_transitions_vec);
+        }
+        self.states = new_states;
+        self.transitions = new_transitions;
+        self.accept_states = new_accept_states;
+        self.start_state = new_start_state;
+        self.next_state_id = new_next_state_id;
+
+    }
+
     // pub fn find_prefix
 
     pub fn from_regex(node: &ASTNode) -> Self{
@@ -559,82 +592,6 @@ impl NFA {
 
     }
 
-    pub fn find_prefix_from_nfa(&mut self) -> String {
-        let mut cur_state_vec = vec![self.start_state.clone()];
-        let mut prefix = String::new();
-
-        assert!(cur_state_vec.len() == 1);
-
-        'outer: while ! cur_state_vec.is_empty() {
-            let mut common_char: Option<char> = None;
-            let mut next_state_vec: Vec<State> = Vec::new();
-            for (i, cur_state) in cur_state_vec.iter().enumerate() {
-                if self.accept_states.contains(cur_state) {
-                    break 'outer;
-                }
-                if self.transitions.contains_key(&cur_state) {
-                    let transitions = self.transitions.get(&cur_state).unwrap();
-                    if i == 0 {
-                        let mut iter = transitions.iter();
-                        if let Some((transition, state)) = iter.next() {
-                            if state == cur_state {
-                                break 'outer;
-                            }
-                            if let Transition::Char(c) = transition {
-                                common_char = Some(*c);
-                                next_state_vec.push(state.clone());
-                                for (key, value) in iter {
-                                    if let Transition::Char(c) = key {
-                                        if *c != common_char.unwrap() {
-                                            break 'outer;
-                                        }
-                                        next_state_vec.push(value.clone());
-                                    }
-                                    else {
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        else {
-                            break;
-                        }
-                    }
-                    else {
-                        let mut iter = transitions.iter();
-                        for (transition, state) in iter {
-                            if state == cur_state {
-                                break 'outer;
-                            }
-                            if let Transition::Char(c) = transition {
-                                if *c != common_char.unwrap()  {
-                                    break 'outer;
-                                }
-                                next_state_vec.push(state.clone());
-                            }
-                            else {
-                                break;
-                            }
-                        }
-                    }
-                }
-                else {
-                    break 'outer;
-                }
-            }
-            prefix.push(common_char.unwrap());
-            cur_state_vec = next_state_vec;
-            
-    }
-
-    // change self field prefix_start_states
-    self.prefix_start_states = cur_state_vec;
-
-    prefix
-
-    }
-
-    
     pub fn check_str_by_prefix(&self, prefix_len: usize, starting_idx: Vec<usize>, input_str: &str) -> HashMap<usize, usize>  {
         
         assert!(!starting_idx.is_empty());
@@ -736,6 +693,85 @@ impl NFA {
         // println!("end of fun {:?}", matched_strs);
         matched_strs
     }
+
+
+    pub fn find_prefix_from_nfa(&mut self) -> String {
+        let mut cur_state_vec = vec![self.start_state.clone()];
+        let mut prefix = String::new();
+
+        assert!(cur_state_vec.len() == 1);
+
+        'outer: while ! cur_state_vec.is_empty() {
+            let mut common_char: Option<char> = None;
+            let mut next_state_vec: Vec<State> = Vec::new();
+            for (i, cur_state) in cur_state_vec.iter().enumerate() {
+                if self.accept_states.contains(cur_state) {
+                    break 'outer;
+                }
+                if self.transitions.contains_key(&cur_state) {
+                    let transitions = self.transitions.get(&cur_state).unwrap();
+                    if i == 0 {
+                        let mut iter = transitions.iter();
+                        if let Some((transition, state)) = iter.next() {
+                            if state == cur_state {
+                                break 'outer;
+                            }
+                            if let Transition::Char(c) = transition {
+                                common_char = Some(*c);
+                                next_state_vec.push(state.clone());
+                                for (key, value) in iter {
+                                    if let Transition::Char(c) = key {
+                                        if *c != common_char.unwrap() {
+                                            break 'outer;
+                                        }
+                                        next_state_vec.push(value.clone());
+                                    }
+                                    else {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            break;
+                        }
+                    }
+                    else {
+                        let mut iter = transitions.iter();
+                        for (transition, state) in iter {
+                            if state == cur_state {
+                                break 'outer;
+                            }
+                            if let Transition::Char(c) = transition {
+                                if *c != common_char.unwrap()  {
+                                    break 'outer;
+                                }
+                                next_state_vec.push(state.clone());
+                            }
+                            else {
+                                break;
+                            }
+                        }
+                    }
+                }
+                else {
+                    break 'outer;
+                }
+            }
+            prefix.push(common_char.unwrap());
+            cur_state_vec = next_state_vec;
+            
+    }
+
+    // change self field prefix_start_states
+    self.prefix_start_states = cur_state_vec;
+
+    prefix
+
+    }
+
+    
+    
 }
 
 
@@ -974,6 +1010,14 @@ mod test {
     }
 
     #[test]
+    fn test_rename_states() {
+        let mut nfa = nfa_from_reg("(fd)+|fl");
+        nfa.debug_helper();
+        nfa.rename_states();
+        nfa.debug_helper();
+    }
+
+    #[test]
     fn test_prefix_nfa() {
         let nfa = nfa_from_reg("(fd)+|fl");
         nfa.debug_helper();
@@ -1036,6 +1080,16 @@ mod test {
     #[test]
     fn test_prefix_from_nfa_7() {
         let mut nfa = nfa_from_reg("ab*a");
+        nfa.debug_helper();
+        let prefix = nfa.find_prefix_from_nfa();
+        println!("Prefix: {}", prefix);
+        println!("States: {:?}", nfa.prefix_start_states);
+    }
+
+
+    #[test]
+    fn test_prefix_from_nfa_8() {
+        let mut nfa = nfa_from_reg(".*");
         nfa.debug_helper();
         let prefix = nfa.find_prefix_from_nfa();
         println!("Prefix: {}", prefix);

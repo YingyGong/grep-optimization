@@ -903,7 +903,7 @@ pub fn nfa_from_reg(regex: &str) -> NFA {
     let ast = cfg.parse(regex).unwrap().collapse();
     let nfa = NFA::from_regex(&ast);
     let nfa = NFA::epsilon_close(nfa);
-    NFA::remove_unreachable_states(nfa)
+    nfa
 }
 
 

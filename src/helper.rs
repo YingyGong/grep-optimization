@@ -184,47 +184,6 @@ pub fn find_prefix_boyer_moore(p: &str, t: &str, r: &Vec<Vec<i32>>, l: &Vec<i32>
 }
 
 
-pub fn check_str_prefix_extraction(rest: &str, prefix: &str, line: &str, start_positions: Vec<usize>) -> HashMap<usize, String> {
-
-    // println!("start_positions: {:?}", start_positions);
-
-    // let mut start_positions = vec![]; // the ending position of the prefix in the line
-
-    // // find all the prefixes in the line
-    // line.match_indices(&prefix).for_each(|(start, _)| start_positions.push(start + prefix.len()));
-
-    let mut output_strs_with_prefix: HashMap<usize, String>= HashMap::new();
-
-    if start_positions.len() == 0 {
-        return output_strs_with_prefix;
-    }
-
-    if rest != "" {
-        // create a new NFA from the rest
-        let nfa = nfa::nfa_from_reg(&rest);
-
-        // check the rest of the line
-        let output_strs = nfa.check_str_with_start_index(line, start_positions);
-
-        // println!("after that function {:?}", output_strs);
-
-        // add prefix to the output strings
-        for output_str in output_strs {
-            output_strs_with_prefix.insert(output_str.0, format!("{}{}", prefix, output_str.1));
-        }
-
-    }
-    else {
-        for i in 0..start_positions.len() {
-            output_strs_with_prefix.insert(i, prefix.to_string());
-        }
-    }
-
-    // delete empty string in output_strs_with_prefix
-    // output_strs_with_prefix.retain(|x| x != "");
-    output_strs_with_prefix
-}
-
 pub fn helper_print(line_idx: usize, line: &str, output_strs: Vec<usize>){
     let mut end_idx: isize = -1;
     for (str_start, str_end) in output_strs.iter().enumerate() {

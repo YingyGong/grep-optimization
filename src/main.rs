@@ -29,6 +29,7 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
     // nfa.debug_helper();
 
     let prefix = nfa.find_prefix_from_nfa();
+    // println!("prefix: {}", prefix);
     // nfa.debug_helper();
 
     if !prefix.is_empty() {

@@ -671,6 +671,48 @@ impl NFA {
 
     
     // }   
+    pub fn check_str_with_start(&self, starting_idxes: &Vec<usize>, input_str: &str) -> Vec<usize> {
+        assert!(!starting_idxes.is_empty());
+        let max_match = starting_idxes.len();
+        let mut matched_strs: Vec<usize> = vec![0; max_match];
+        let mut end_idx = 0;
+
+        for (i, start_idx) in starting_idxes.iter().enumerate() {
+            if *start_idx < end_idx {
+                continue;
+            }
+            let mut cur_states = HashSet::new();
+            for start_state in self.prefix_start_states.iter() {
+                cur_states.insert(start_state);
+            }
+
+            // start iterate from the start_idx
+            for (j, c) in input_str.char_indices().skip_while(|(index, _)| *index < *start_idx) {
+                let mut next_states = HashSet::new();
+                for state in cur_states.iter() {
+                    if let Some(transitions) = self.transitions.get(state) {
+                        for (transition, next_state) in transitions {
+                            match transition {
+                                Transition::Char(c1) if *c1 == c => {
+                                    next_states.insert(next_state);
+                                }
+                                _ => (),
+                            }
+                        }
+                    }
+                }
+                cur_states = next_states;
+                if cur_states.is_empty() {
+                    break;
+                }
+                if cur_states.iter().any(|state| self.accept_states.contains(state)) {
+                    end_idx = j + 1;
+                    matched_strs[i] = end_idx;
+                }
+            }
+        }
+        matched_strs
+    }
 
     
     // depracated, turn into general in futrue

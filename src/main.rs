@@ -7,7 +7,7 @@ mod helper;
 use crate::nfa::NFA;
 use crate::earley_parse::CFG;
 use crate::cfg::cfg_for_regular_expression;
-use crate::helper::{bad_char_table, good_suffix_table, full_shift_table, find_prefix_boyer_moore, check_str_with_nfa, helper_print};
+use crate::helper::{bad_char_table, good_suffix_table, full_shift_table, find_prefix_boyer_moore, check_str_with_nfa, helper_print, helper_print_with_start};
 use std::collections::HashSet;
 use std::env;
 use std::error::Error;
@@ -46,7 +46,15 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
             }
             // nfa.debug_helper();
             
-            check_str_with_nfa(&nfa, &line, &prefix, start_positions, index + 1);
+            let matched_tuples = nfa.check_str_with_start( &start_positions, &line);
+
+            if matched_tuples.is_empty() {
+                continue;
+            }
+
+            helper_print_with_start(index + 1, start_positions, &line, matched_tuples);
+
+            
         }
     }
     else {

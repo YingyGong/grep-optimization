@@ -592,12 +592,18 @@ impl NFA {
 
     }
 
+    // pub fn check_str_without_start(&self, input_str: &str) -> Vec
+
     pub fn check_str_by_prefix(&self, prefix_len: usize, starting_idx: Vec<usize>, input_str: &str) -> HashMap<usize, usize>  {
         
         assert!(!starting_idx.is_empty());
         // println!("starting idx: {:?}", starting_idx);
         
         let mut cur_positions: HashMap<State, Vec<usize>> = HashMap::new();
+        let mut next_positions: HashMap<State, Vec<usize>> = HashMap::new();
+
+        // let mut next_positions: HashMap<State, Vec<usize>> = HashMap::new();
+        // let mut temp_positions: HashMap<State, Vec<usize>> = HashMap::new();
          // strings to return
         let mut matched_strs: HashMap<usize, usize> = HashMap::new();
     
@@ -615,9 +621,8 @@ impl NFA {
         // only match from starting idx
         let min_idx = starting_idx[0]; // must be successful, since it is sorted
         
-        for (i, c) in input_str.char_indices().skip_while(|(index, _)| *index < min_idx) {
-
-            let mut next_positions: HashMap<State, Vec<usize>> = HashMap::new();
+        for (i, c) in input_str.char_indices().skip_while(|(index, _)| *index < min_idx) {  
+            next_positions.clear();
             if starting_idx.contains(&(i)) {
                 for start_state in self.prefix_start_states.iter(){
                     // push i into the vector of starting positions of the current state
@@ -666,7 +671,9 @@ impl NFA {
                 }
             }
             
-            cur_positions = next_positions;
+            // switch the hashmap
+            // temp_positions = cur_positions;
+            std::mem::swap(&mut cur_positions, &mut next_positions);
 
             // check any matched
             for accept_state in &self.accept_states {

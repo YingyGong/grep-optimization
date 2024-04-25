@@ -640,7 +640,7 @@ impl NFA {
         assert!(!starting_idx.is_empty());
         // println!("starting idx: {:?}", starting_idx);
         
-        let mut cur_positions: HashMap<State, Vec<usize>> = HashMap::new();
+        let mut cur_positions: HashMap<State, usize> = HashMap::new();
          // strings to return
         let mut matched_strs: HashMap<usize, usize> = HashMap::new();
     
@@ -649,9 +649,10 @@ impl NFA {
                 if starting_idx.contains(&input_str.len()) {
                     if self.accept_states.contains(&start_state) {
                         matched_strs.insert(input_str.len() - prefix_len, input_str.len());
+                        println!("matched {:?}", matched_strs);
                     }
                 }
-                cur_positions.insert(start_state.clone(), vec![starting_idx[0]]);
+                cur_positions.insert(start_state.clone(), starting_idx[0]);
             }
         }
 
@@ -660,18 +661,15 @@ impl NFA {
         
         for (i, c) in input_str.char_indices().skip_while(|(index, _)| *index < min_idx) {
 
-            let mut next_positions: HashMap<State, Vec<usize>> = HashMap::new();
+            let mut next_positions: HashMap<State, usize> = HashMap::new();
             if starting_idx.contains(&(i)) {
                 for start_state in self.prefix_start_states.iter(){
                     // push i into the vector of starting positions of the current state
                     if !cur_positions.contains_key(start_state) {
-                        cur_positions.insert(start_state.clone(), vec![i]);
+                        cur_positions.insert(start_state.clone(), i);
                     }
-                    else {
-                        if let Some(start_positions) = cur_positions.get_mut(start_state) {
-                            start_positions.push(i);
-                        }
-                    }
+                    // else skip
+                    
                     if self.accept_states.contains(&start_state) {
                         matched_strs.insert(i - prefix_len, i);
                     }
@@ -690,18 +688,9 @@ impl NFA {
                                 // get the starting positions of the current state
                                 // if the next state is not in the hashmap, add the starting position of the current state
                                 if !next_positions.contains_key(next_state) {
-                                    next_positions.insert(next_state.clone(), start_position.clone());
+                                    next_positions.insert(next_state.clone(), *start_position);
                                 }
-                                else {
-                                    // if the next state is in the hashmap, add the starting positions of the current state
-                                    // to the vector of starting positions of the next state
-                                    
-                                        if let Some(next_start_positions) = next_positions.get_mut(next_state) {
-                                            for start_pos in start_position {
-                                                next_start_positions.push(*start_pos);
-                                            }
-                                        }
-                                }
+                                
                             }
                             _ => (),
                         }
@@ -710,26 +699,15 @@ impl NFA {
             }
             
             cur_positions = next_positions;
+            // println!("cur_positions at iter {}: {:?}", i, cur_positions);
 
             // check any matched
             for accept_state in &self.accept_states {
-                if let Some(start_positions) = cur_positions.get_mut(accept_state) {
+                if let Some(start_position) = cur_positions.get_mut(accept_state) {
+                    matched_strs.insert(*start_position - prefix_len, i + 1);
+                    // println!("matched {:?}", matched_strs);
+
                     // sort the start positions in ascending order
-                    start_positions.sort();
-                    // turn start_positions into a set
-                    let start_positions: HashSet<usize> = start_positions.iter().cloned().collect();
-                    for start_pos in start_positions {
-                        // if start_pos == i && self.prefix_start_states.contains(&accept_state) {
-                        //     matched_strs.insert(start_pos - prefix_len, start_pos);
-                        //     // println!("matched");
-                        // }
-                        // else 
-                        // {
-                            matched_strs.insert(start_pos - prefix_len, i + 1);
-                            // println!("matched from index {} at char {}: {}", start_pos, i, input_str[start_pos..(i+1)].to_string());
-                            
-                        // }
-                    }
                 }
             }
         }
@@ -1036,6 +1014,16 @@ mod test {
     #[test]
     fn test_prefix_from_nfa_7() {
         let mut nfa = nfa_from_reg("ab*a");
+        nfa.debug_helper();
+        let prefix = nfa.find_prefix_from_nfa();
+        println!("Prefix: {}", prefix);
+        println!("States: {:?}", nfa.prefix_start_states);
+    }
+
+
+    #[test]
+    fn test_prefix_from_nfa_8() {
+        let mut nfa = nfa_from_reg(".*");
         nfa.debug_helper();
         let prefix = nfa.find_prefix_from_nfa();
         println!("Prefix: {}", prefix);

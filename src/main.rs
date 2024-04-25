@@ -45,14 +45,14 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
                 continue;
             }
             // nfa.debug_helper();
+            let prefix_len = prefix.len();
             
-            let matched_tuples = nfa.check_str_with_start( &start_positions, &line);
+            let matched_tuples = nfa.check_str_with_start( &start_positions, &line, prefix_len);
             
 
             if matched_tuples.is_empty() {
                 continue;
             }
-            let prefix_len = prefix.len();
             helper_print_with_start(index + 1, start_positions, &line, matched_tuples, prefix_len);
 
             

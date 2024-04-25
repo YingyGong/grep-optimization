@@ -671,14 +671,15 @@ impl NFA {
 
     
     // }   
-    pub fn check_str_with_start(&self, starting_idxes: &Vec<usize>, input_str: &str) -> Vec<usize> {
+    pub fn check_str_with_start(&self, starting_idxes: &Vec<usize>, input_str: &str, prefix_len: usize) -> Vec<usize> {
         assert!(!starting_idxes.is_empty());
         let max_match = starting_idxes.len();
         let mut matched_strs: Vec<usize> = vec![0; max_match];
         let mut end_idx = 0;
 
         for (i, start_idx) in starting_idxes.iter().enumerate() {
-            if *start_idx < end_idx {
+            // println!("start_idx: {} and end_idx {}", start_idx, end_idx);
+            if *start_idx - prefix_len < end_idx {
                 continue;
             }
             let mut cur_states = HashSet::new();
@@ -903,7 +904,7 @@ pub fn nfa_from_reg(regex: &str) -> NFA {
     let ast = cfg.parse(regex).unwrap().collapse();
     let nfa = NFA::from_regex(&ast);
     let nfa = NFA::epsilon_close(nfa);
-    nfa
+    NFA::remove_unreachable_states(nfa)
 }
 
 

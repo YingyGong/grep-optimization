@@ -27,23 +27,9 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
 
     let mut nfa = nfa::nfa_from_reg(&regex);
     let prefix = nfa.find_prefix_from_nfa();
-    
-    if prefix == regex {
-        let r = bad_char_table(prefix.as_str());
-        let l = good_suffix_table(prefix.as_str());
-        let f = full_shift_table(prefix.as_str());
-        
-        for (index, line) in reader.lines().enumerate() {
-            let line = line?;
+    // nfa.debug_helper();
 
-            let start_positions: Vec<usize> = find_prefix_boyer_moore(&prefix, &line, &r, &l, &f);
-            
-            for _ in start_positions {
-                println!("{}:{}", index + 1, prefix);
-            }
-        }
-    }
-    else if !prefix.is_empty() {
+    if !prefix.is_empty() {
         let r = bad_char_table(prefix.as_str());
         let l = good_suffix_table(prefix.as_str());
         let f = full_shift_table(prefix.as_str());
@@ -63,13 +49,11 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
             check_str_with_nfa(&nfa, &line, &prefix, start_positions, index + 1);
         }
     }
+
     else {
         for (index, line) in reader.lines().enumerate() {
             let line = line?;
             let start_positions: Vec<usize> = (0..line.len()).collect();
-            if start_positions.is_empty() {
-                continue;
-            }
             check_str_with_nfa(&nfa, &line, &prefix, start_positions, index + 1);
         }
     }

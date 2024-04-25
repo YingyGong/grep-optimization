@@ -10,7 +10,7 @@ use core::ops::RangeInclusive;
 // use indexmap::IndexSet;
 
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 struct State {
     id: usize,
 }
@@ -28,6 +28,7 @@ pub struct NFA {
     start_state: State,
     accept_states: HashSet<State>,
     next_state_id: usize,
+    prefix_start_states: Vec<State>,
 }
 
 impl NFA {
@@ -39,6 +40,7 @@ impl NFA {
             start_state: start_state.clone(),
             accept_states: HashSet::new(),
             next_state_id: 1,
+            prefix_start_states: Vec::new(),
         };
         nfa.states.insert(start_state.clone());
         nfa
@@ -81,6 +83,7 @@ impl NFA {
             start_state: State { id: 0 },
             accept_states: HashSet::new(),
             next_state_id: self.next_state_id,
+            prefix_start_states: Vec::new(),
         };
 
         for state in self.states {
@@ -303,6 +306,8 @@ impl NFA {
         self
     }
 
+    // pub fn find_prefix
+
     pub fn from_regex(node: &ASTNode) -> Self{
         match node {
             ASTNode::NonTerminal { sym, children } =>
@@ -369,6 +374,7 @@ impl NFA {
         println!("Transitions: {:?}", self.transitions);
         println!("Start state: {:?}", self.start_state);
         println!("Accept states: {:?}", self.accept_states);
+        println!("Prefix states: {:?}", self.prefix_start_states);
     }
     
     pub fn check_str_princeton(&self, input_str: &str) -> Vec<String> {
@@ -441,67 +447,32 @@ impl NFA {
         matched_strs
     }
 
-    // pub fn check_str_with_start_index(&self, input_str: &str, starting_idx: Vec<usize>) -> HashMap<usize, String> {
-    //     assert!(!starting_idx.is_empty());
-    //     let mut cur_positions: HashMap<State, usize> = HashMap::new();
 
-    //     cur_positions.insert(self.start_state.clone(), starting_idx[0]);
-        
-    //     // strings to return
-    //     let mut matched_strs: HashMap<usize, String> = HashMap::new();
+    // // if there is prefix
+    // pub fn check_str_with_prefix(&self, input_str: &str, prefix_len: usize, starting_idx: Vec<usize>) -> Vec<(usize, usize)> {
+    //     assert!(!starting_idx.is_empty());
+
+    //     let mut matched_idx: Vec<(usize, usize)> = Vec::new();
+
+    //     let matched_str_ending_idx = 0;
+
+    //     let min_idx = starting_idx[0]; // must be successful, since it is sorted
 
     //     // only match from starting idx
-    //     let min_idx = starting_idx[0]; // must be successful, and it is sorted
 
+
+    //     // special case where prefix ends at the end of the string and it can be accepted
     //     if starting_idx.contains(&input_str.len()) {
-    //         if self.accept_states.contains(&self.start_state) {
-    //             matched_strs.insert(input_str.len(), "".to_string());
+    //         for start_state in self.prefix_start_states.iter(){
+    //             if self.accept_states.contains(&start_state) {
+    //                 matched_idx.push((input_str.len() - prefix_len, input_str.len()));
+    //             }
     //         }
     //     }
+    //     matched_idx
+    // }
 
-    //     for (i, c) in input_str.char_indices().skip_while(|(index, _)| *index < min_idx) {
-    //         // this state can be reached by the earlist index
-    //         let mut next_positions: HashMap<State, usize> = HashMap::new();
-    //         if starting_idx.contains(&(i)) {
-    //             cur_positions.insert(self.start_state.clone(), i);
-    //             if self.accept_states.contains(&self.start_state) {
-    //                 matched_strs.insert(i, "".to_string());
-    //             }
-    //         }
-    //         // for all possible current states
-    //         for (state, &start_idx) in cur_positions.iter() {
-    //             if let Some(transitions) = self.transitions.get(state) {
-    //                 for (transition, next_state) in transitions {
-    //                     match transition {
-    //                         // if the character can lead to a next state by a valid transition
-    //                         Transition::Char(c_in_transion) if *c_in_transion == c => {
-    //                             let entry = next_positions.entry(next_state.clone()).or_default();
-    //                             if *entry > start_idx {
-    //                                 *entry = start_idx;
-    //                             }
-    //                         }
-    //                         _ => (),
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //         cur_positions = next_positions;
 
-    //         // check any matched
-    //         for accept_state in &self.accept_states {
-    //             if let Some(from_position) = cur_positions.get(accept_state) {
-    //                     if *from_position == i && (&self.start_state == accept_state) {
-    //                         matched_strs.insert(*from_position, "".to_string());
-    //                     }
-    //                     else {
-    //                         matched_strs.insert(*from_position, input_str[*from_position..(i+1)].to_string());
-                            
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //         matched_strs
-    //     }
     pub fn check_str_with_start_index(&self, input_str: &str, starting_idx: Vec<usize>) -> HashMap<usize, String> {
         assert!(!starting_idx.is_empty());
         
@@ -588,8 +559,184 @@ impl NFA {
 
     }
 
+    pub fn find_prefix_from_nfa(&mut self) -> String {
+        let mut cur_state_vec = vec![self.start_state.clone()];
+        let mut prefix = String::new();
+
+        assert!(cur_state_vec.len() == 1);
+
+        'outer: while ! cur_state_vec.is_empty() {
+            let mut common_char: Option<char> = None;
+            let mut next_state_vec: Vec<State> = Vec::new();
+            for (i, cur_state) in cur_state_vec.iter().enumerate() {
+                if self.accept_states.contains(cur_state) {
+                    break 'outer;
+                }
+                if self.transitions.contains_key(&cur_state) {
+                    let transitions = self.transitions.get(&cur_state).unwrap();
+                    if i == 0 {
+                        let mut iter = transitions.iter();
+                        if let Some((transition, state)) = iter.next() {
+                            if state == cur_state {
+                                break 'outer;
+                            }
+                            if let Transition::Char(c) = transition {
+                                common_char = Some(*c);
+                                next_state_vec.push(state.clone());
+                                for (key, value) in iter {
+                                    if let Transition::Char(c) = key {
+                                        if *c != common_char.unwrap() {
+                                            break 'outer;
+                                        }
+                                        next_state_vec.push(value.clone());
+                                    }
+                                    else {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            break;
+                        }
+                    }
+                    else {
+                        let mut iter = transitions.iter();
+                        for (transition, state) in iter {
+                            if state == cur_state {
+                                break 'outer;
+                            }
+                            if let Transition::Char(c) = transition {
+                                if *c != common_char.unwrap()  {
+                                    break 'outer;
+                                }
+                                next_state_vec.push(state.clone());
+                            }
+                            else {
+                                break;
+                            }
+                        }
+                    }
+                }
+                else {
+                    break 'outer;
+                }
+            }
+            prefix.push(common_char.unwrap());
+            cur_state_vec = next_state_vec;
+            
     }
 
+    // change self field prefix_start_states
+    self.prefix_start_states = cur_state_vec;
+
+    prefix
+
+    }
+
+    
+    pub fn check_str_by_prefix(&self, prefix_len: usize, starting_idx: Vec<usize>, input_str: &str) -> HashMap<usize, usize>  {
+        
+        assert!(!starting_idx.is_empty());
+        // println!("starting idx: {:?}", starting_idx);
+        
+        let mut cur_positions: HashMap<State, Vec<usize>> = HashMap::new();
+         // strings to return
+        let mut matched_strs: HashMap<usize, usize> = HashMap::new();
+    
+        if !starting_idx.is_empty() {
+            for start_state in self.prefix_start_states.iter(){
+                if starting_idx.contains(&input_str.len()) {
+                    if self.accept_states.contains(&start_state) {
+                        matched_strs.insert(input_str.len() - prefix_len, input_str.len());
+                    }
+                }
+                cur_positions.insert(start_state.clone(), vec![starting_idx[0]]);
+            }
+        }
+
+        // only match from starting idx
+        let min_idx = starting_idx[0]; // must be successful, since it is sorted
+        
+        for (i, c) in input_str.char_indices().skip_while(|(index, _)| *index < min_idx) {
+
+            let mut next_positions: HashMap<State, Vec<usize>> = HashMap::new();
+            if starting_idx.contains(&(i)) {
+                for start_state in self.prefix_start_states.iter(){
+                    // push i into the vector of starting positions of the current state
+                    if !cur_positions.contains_key(start_state) {
+                        cur_positions.insert(start_state.clone(), vec![i]);
+                    }
+                    else {
+                        if let Some(start_positions) = cur_positions.get_mut(start_state) {
+                            start_positions.push(i);
+                        }
+                    }
+                    if self.accept_states.contains(&start_state) {
+                        matched_strs.insert(i - prefix_len, i);
+                    }
+                }
+            }
+
+            // println!("cur_positions at iter {}: {:?}", i, cur_positions);
+            // for all possible current states
+            for (state, start_position) in cur_positions.iter() {
+                if let Some(transitions) = self.transitions.get(state) {
+                    for (transition, next_state) in transitions {
+                        match transition {
+                            // if the character can lead to a next state by a valid transition
+                            Transition::Char(c1) if *c1 == c => {
+                                
+                                // get the starting positions of the current state
+                                // if the next state is not in the hashmap, add the starting position of the current state
+                                if !next_positions.contains_key(next_state) {
+                                    next_positions.insert(next_state.clone(), start_position.clone());
+                                }
+                                else {
+                                    // if the next state is in the hashmap, add the starting positions of the current state
+                                    // to the vector of starting positions of the next state
+                                    
+                                        if let Some(next_start_positions) = next_positions.get_mut(next_state) {
+                                            for start_pos in start_position {
+                                                next_start_positions.push(*start_pos);
+                                            }
+                                        }
+                                }
+                            }
+                            _ => (),
+                        }
+                    }
+                }
+            }
+            
+            cur_positions = next_positions;
+
+            // check any matched
+            for accept_state in &self.accept_states {
+                if let Some(start_positions) = cur_positions.get_mut(accept_state) {
+                    // sort the start positions in ascending order
+                    start_positions.sort();
+                    // turn start_positions into a set
+                    let start_positions: HashSet<usize> = start_positions.iter().cloned().collect();
+                    for start_pos in start_positions {
+                        // if start_pos == i && self.prefix_start_states.contains(&accept_state) {
+                        //     matched_strs.insert(start_pos - prefix_len, start_pos);
+                        //     // println!("matched");
+                        // }
+                        // else 
+                        // {
+                            matched_strs.insert(start_pos - prefix_len, i + 1);
+                            // println!("matched from index {} at char {}: {}", start_pos, i, input_str[start_pos..(i+1)].to_string());
+                            
+                        // }
+                    }
+                }
+            }
+        }
+        // println!("end of fun {:?}", matched_strs);
+        matched_strs
+    }
+}
 
 
 impl Clone for NFA {
@@ -600,6 +747,7 @@ impl Clone for NFA {
             start_state: self.start_state.clone(),
             accept_states: self.accept_states.clone(),
             next_state_id: self.next_state_id,
+            prefix_start_states: self.prefix_start_states.clone(),
         };
         new_nfa
     }
@@ -827,7 +975,70 @@ mod test {
 
     #[test]
     fn test_prefix_nfa() {
-        let nfa = nfa_from_reg("foo(d|l)");
+        let nfa = nfa_from_reg("(fd)+|fl");
         nfa.debug_helper();
+    }
+
+    #[test]
+    fn test_prefix_from_nfa() {
+        let mut nfa = nfa_from_reg("(fd)+|fl");
+        nfa.debug_helper();
+        let prefix = nfa.find_prefix_from_nfa();
+        println!("Prefix: {}", prefix);
+        println!("States: {:?}", nfa.prefix_start_states);
+    }
+
+    #[test]
+    fn test_prefix_from_nfa_2() {
+        let mut nfa = nfa_from_reg("a(b|c)");
+        nfa.debug_helper();
+        let prefix = nfa.find_prefix_from_nfa();
+        println!("Prefix: {}", prefix);
+        println!("States: {:?}", nfa.prefix_start_states);
+    }
+
+    #[test]
+    fn test_prefix_from_nfa_3() {
+        let mut nfa = nfa_from_reg("(abc|abc)de");
+        nfa.debug_helper();
+        let prefix = nfa.find_prefix_from_nfa();
+        println!("Prefix: {}", prefix);
+        println!("States: {:?}", nfa.prefix_start_states);
+    }
+
+    #[test]
+    fn test_prefix_from_nfa_4() {
+        let mut nfa = nfa_from_reg("ab*");
+        nfa.debug_helper();
+        let prefix = nfa.find_prefix_from_nfa();
+        println!("Prefix: {}", prefix);
+        println!("States: {:?}", nfa.prefix_start_states);
+    }
+
+    #[test]
+    fn test_prefix_from_nfa_5() {
+        let mut nfa = nfa_from_reg("ab+");
+        nfa.debug_helper();
+        let prefix = nfa.find_prefix_from_nfa();
+        println!("Prefix: {}", prefix);
+        println!("States: {:?}", nfa.prefix_start_states);
+    }
+
+    #[test]
+    fn test_prefix_from_nfa_6() {
+        let mut nfa = nfa_from_reg("(fd)+|fl");
+        nfa.debug_helper();
+        let prefix = nfa.find_prefix_from_nfa();
+        println!("Prefix: {}", prefix);
+        println!("States: {:?}", nfa.prefix_start_states);
+    }
+
+    #[test]
+    fn test_prefix_from_nfa_7() {
+        let mut nfa = nfa_from_reg("ab*a");
+        nfa.debug_helper();
+        let prefix = nfa.find_prefix_from_nfa();
+        println!("Prefix: {}", prefix);
+        println!("States: {:?}", nfa.prefix_start_states);
     }
 }

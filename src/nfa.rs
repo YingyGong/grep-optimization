@@ -645,15 +645,6 @@ impl NFA {
                 }
             }
 
-            // // Check for new starting indices at this character
-            // if starting_idx.contains(&i) {
-            //     for start_state in &self.prefix_start_states {
-            //         cur_positions[start_state.id].push(i);
-            //         if self.accept_states.contains(start_state) {
-            //             matched_strs[i - prefix_len] = i;
-            //         }
-            //     }
-            // }
 
             cur_positions = next_positions;
 
@@ -661,14 +652,13 @@ impl NFA {
             for accept_state in &self.accept_states {
                 if let Some(positions) = cur_positions.get(accept_state.id) {
                     for &pos in positions {
-                        if pos >= prefix_len {  // Ensure no underflow
+                        if pos >= prefix_len {  //  no underflow
                             matched_strs[pos - prefix_len] = i + 1;
                         }
                     }
                 }
             }
         }
-
         matched_strs
     }
     

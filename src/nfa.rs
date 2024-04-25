@@ -1183,4 +1183,14 @@ mod test {
         let matched_strs = nfa.check_str_without_start(&str);
         helper_print(1, &str, matched_strs);
     }
+
+    #[test]
+    fn test_check_str_without_start_3() {
+        let nfa = nfa_from_reg("ab*");
+        nfa.debug_helper();
+        let str = "ababbabbbab";
+        let matched_strs = nfa.check_str_without_start(&str);
+        println!("{:?}", matched_strs);
+        helper_print(1, &str, matched_strs);
+    }
 }

@@ -228,7 +228,7 @@ pub fn helper_print(line_idx: usize, line: &str, output_strs: Vec<usize>){
         if *str_end == 0 {
             continue;
         }
-        if str_start as isize > end_idx {
+        if str_start as isize >= end_idx {
             end_idx = *str_end as isize;
             println!("{}:{}", line_idx, line.get(str_start..*str_end).unwrap());
         }

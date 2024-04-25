@@ -128,13 +128,11 @@ pub fn full_shift_table(s: &str) -> Vec<i32> {
 }
 
 pub fn find_prefix_boyer_moore(p: &str, t: &str, r: &Vec<Vec<i32>>, l: &Vec<i32>, f: &Vec<i32>) -> Vec<usize> {
+    assert!(! p.is_empty());
     if t.is_empty() || t.len() < p.len() {
         return Vec::new();
     }
 
-    if p.is_empty() {
-        return (0..t.len()).collect();
-    }
 
     let mut matches: Vec<usize> = Vec::new();
     // let r = bad_char_table(p);
@@ -156,7 +154,7 @@ pub fn find_prefix_boyer_moore(p: &str, t: &str, r: &Vec<Vec<i32>>, l: &Vec<i32>
         if i == -1 || h == previous_k {
             matches.push(k + 1 - p.len());
             // k += if p.len() > 1 { p.len() - f[1] as usize } else { 1 }; // delete f[1]
-            k += p.len();
+            k += p.len() -f[1] as usize;
         } else {
             let char_shift = i - r[alphabet_index(t.chars().nth(h as usize).unwrap())][i as usize] as isize;
             let suffix_shift = if i + 1 == p.len() as isize {

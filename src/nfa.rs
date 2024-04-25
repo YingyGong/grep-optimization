@@ -673,6 +673,7 @@ impl NFA {
     // }   
     pub fn check_str_with_start(&self, starting_idxes: &Vec<usize>, input_str: &str, prefix_len: usize) -> Vec<usize> {
         assert!(!starting_idxes.is_empty());
+        
         let max_match = starting_idxes.len();
         let mut matched_strs: Vec<usize> = vec![0; max_match];
         let mut end_idx = 0;

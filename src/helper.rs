@@ -128,7 +128,7 @@ pub fn full_shift_table(s: &str) -> Vec<i32> {
 }
 
 pub fn find_prefix_boyer_moore(p: &str, t: &str, r: &Vec<Vec<i32>>, l: &Vec<i32>, f: &Vec<i32>) -> Vec<usize> {
-    assert!(! p.is_empty());
+    assert!(!p.is_empty());
     if t.is_empty() || t.len() < p.len() {
         return Vec::new();
     }

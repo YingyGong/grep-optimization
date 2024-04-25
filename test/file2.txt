@@ -1,0 +1,10 @@
+Hello, this is a test file.
+It contains various patterns like numbers 12345 and special symbols %$#@!
+Do you see any animals like cats or dogs or maybe birds?
+How about sequences of mixed content: alpha123, 987xyz, and !@#ABC?
+This line is for testing whitespace: tabs		and multiple     spaces.
+Special characters that need escaping: curly braces { }, star *, plus +, and questionmark ?.
+Test nested structures (parentheses) and alternation with pipes |.
+A line with just a period should match any character if using dot: .
+Using shorthand character classes: \s for whitespace, \d for digits, and \w for word characters.
+Negation tests: \S \W \D should match non-whitespace, non-word, non-digit respectively.

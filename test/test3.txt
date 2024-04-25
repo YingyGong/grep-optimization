@@ -1,0 +1,26 @@
+    ENDw
+    ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzENDs
+    0123456789ENDd
+    ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ENDw
+    	 	 0123456789ENDs
+    	 	 ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzENDd
+            ENDs
+tab space tab space
+    ba fa
+exactmatchtest
+afeafeeeafee
+
+abbbccc
+aaaabbcc
+aab 
+cbcc
+accc
+\
+kkk
+kabk
+dec 
+ddde
+abcdeabcff
+fd
+flfdfdl
+Start1ENDs EndP

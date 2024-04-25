@@ -1,0 +1,15 @@
+^beginning of the document
+this is a test line
+fooled you once
+food is good
+abcdef the first pattern
+Here we go around the cabab
+Regular ab* testing
+1234 is a number
+There are no spaces here
+Line ends in end$
+Let's fail this one
+a+ b+
+abcdefghijk
+fo fox of you
+abbabbb

@@ -36,6 +36,7 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
         let r = bad_char_table(prefix.as_str());
         let l = good_suffix_table(prefix.as_str());
         let f = full_shift_table(prefix.as_str());
+        // println!("r: {:?}, l: {:?}, f: {:?}", r, l, f);
 
         for (index, line) in reader.lines().enumerate() {
             let line = line?;

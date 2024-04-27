@@ -156,7 +156,8 @@ pub fn find_prefix_boyer_moore(p: &str, t: &str, r: &Vec<Vec<i32>>, l: &Vec<i32>
             // k += if p.len() > 1 { p.len() - f[1] as usize } else { 1 }; // delete f[1]
             k += 
             if p.len() > 1 {
-                p.len() - f[1] as usize
+                p.len() 
+                // - f[1] as usize
             } else {
                 1
             };

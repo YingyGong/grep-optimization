@@ -294,40 +294,6 @@ impl NFA {
 
     }
 
-    pub fn rename_states(&mut self) {
-        // rename states from 0 as consecutive integers
-        let mut state_map: HashMap<State, State> = HashMap::new();
-        let mut new_states: HashSet<State> = HashSet::new();
-        let mut new_transitions: HashMap<State, HashSet<(Transition, State)>> = HashMap::new();
-        let mut new_accept_states: HashSet<State> = HashSet::new();
-        let mut new_start_state: State = State { id: 0 };
-        let mut new_next_state_id: usize = 1;
-        for state in &self.states {
-            let new_state = State { id: new_next_state_id };
-            state_map.insert(state.clone(), new_state.clone());
-            new_states.insert(new_state.clone());
-            new_next_state_id += 1;
-        }
-        new_start_state = state_map.get(&self.start_state).unwrap().clone();
-        for state in &self.accept_states {
-            new_accept_states.insert(state_map.get(state).unwrap().clone());
-        }
-        for (state, transitions) in &self.transitions {
-            let mut new_transitions_vec: HashSet<(Transition, State)> = HashSet::new();
-            for (transition, next_state) in transitions {
-                new_transitions_vec.insert((transition.clone(), state_map.get(next_state).unwrap().clone()));
-            }
-            new_transitions.insert(state_map.get(state).unwrap().clone(), new_transitions_vec);
-        }
-        self.states = new_states;
-        self.transitions = new_transitions;
-        self.accept_states = new_accept_states;
-        self.start_state = new_start_state;
-        self.next_state_id = new_next_state_id;
-
-    }
-
-    // pub fn find_prefix
 
     pub fn from_regex(node: &ASTNode) -> Self{
         match node {
@@ -415,9 +381,9 @@ impl NFA {
                 cur_positions.insert(self.start_state.clone(), i);
             }
 
-            // if self.accept_states.contains(&self.start_state) {
-            //     matched_strs.insert(i, 1);
-            // }
+            if self.accept_states.contains(&self.start_state) {
+                matched_strs[i] = i + 1;
+            }
 
             // println!("positions before iter {}: {:?}", i, cur_positions);
             // for all possible current states

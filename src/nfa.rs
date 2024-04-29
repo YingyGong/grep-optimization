@@ -25,7 +25,7 @@ enum Transition {
 #[derive(Debug)]
 pub struct NFA {
     states: HashSet<State>,
-    transitions: HashMap<State, Vec<(Transition, State)>>,
+    transitions: HashMap<State, HashSet<(Transition, State)>>,
     start_state: State,
     accept_states: HashSet<State>,
     next_state_id: usize
@@ -57,7 +57,7 @@ impl NFA {
     }
 
     fn add_transition(&mut self, from: State, transition: Transition, to: State) {
-        self.transitions.entry(from).or_insert_with(Vec::new).push((transition, to));
+        self.transitions.entry(from).or_insert_with(HashSet::new).insert((transition, to));
     }
 
     fn add_transition_ch_list(&mut self, char_vec: RangeInclusive<u8>, to: State) {
@@ -86,9 +86,9 @@ impl NFA {
         }
 
         for (state, transitions) in self.transitions {
-            let mut new_transitions = Vec::new();
+            let mut new_transitions = HashSet::new();
             for (transition, next_state) in transitions {
-                new_transitions.push((transition.clone(), State { id: next_state.id + shift_num }));
+                new_transitions.insert((transition.clone(), State { id: next_state.id + shift_num }));
             }
             new_nfa.transitions.insert(State { id: state.id + shift_num }, new_transitions);
         }
@@ -246,7 +246,7 @@ impl NFA {
         }
 
         for (state, next_state) in cur.iter() {
-            let transition_copy = self.transitions.get(next_state).unwrap_or(&Vec::new()).clone();
+            let transition_copy = self.transitions.get(next_state).unwrap_or(&HashSet::new()).clone();
             for (t, state_c) in transition_copy {
                 if t != Transition::Epsilon 
                 {   
@@ -298,7 +298,7 @@ impl NFA {
         // rename states from 0 as consecutive integers
         let mut state_map: HashMap<State, State> = HashMap::new();
         let mut new_states: HashSet<State> = HashSet::new();
-        let mut new_transitions: HashMap<State, Vec<(Transition, State)>> = HashMap::new();
+        let mut new_transitions: HashMap<State, HashSet<(Transition, State)>> = HashMap::new();
         let mut new_accept_states: HashSet<State> = HashSet::new();
         let mut new_start_state: State = State { id: 0 };
         let mut new_next_state_id: usize = 1;
@@ -313,9 +313,9 @@ impl NFA {
             new_accept_states.insert(state_map.get(state).unwrap().clone());
         }
         for (state, transitions) in &self.transitions {
-            let mut new_transitions_vec: Vec<(Transition, State)> = Vec::new();
+            let mut new_transitions_vec: HashSet<(Transition, State)> = HashSet::new();
             for (transition, next_state) in transitions {
-                new_transitions_vec.push((transition.clone(), state_map.get(next_state).unwrap().clone()));
+                new_transitions_vec.insert((transition.clone(), state_map.get(next_state).unwrap().clone()));
             }
             new_transitions.insert(state_map.get(state).unwrap().clone(), new_transitions_vec);
         }

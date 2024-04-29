@@ -282,8 +282,12 @@ pub fn find_and_print_matches_special_case(text: &str, line_number: usize, optio
             if i != len - 1 {
                 continue;
             }
-            if i - start_index >= mandatory_a_count {
-                println!("{}:{}", line_number, text.get(start_index..(i +1)).unwrap());
+            if i + 1 - start_index >= mandatory_a_count {
+                if i + 1 - start_index <= optional_a_count + mandatory_a_count {
+                    println!("{}:{}", line_number, text.get(start_index..(i + 1)).unwrap());
+                } else {
+                    println!("{}:{}", line_number, text.get(start_index..i).unwrap());
+                }
             }
 
         } else if c == 'b' {

@@ -229,15 +229,12 @@ pub fn is_special_case_regex(regex: &str) -> Option<(usize, usize, bool)> {
                 if c == 'a' && chars.peek() == Some(&'?') {
                     optional_a_count += 1;
                     chars.next(); // skip the '?' character
-                } else if c == 'a' {
+                } else {
+                    if c != 'a' {
+                        return None; // invalid character in optional 'a' section
+                    }
                     current_state = State::MandatoryA;
                     mandatory_a_count += 1; // start counting mandatory 'a's
-                } else if c == '\\' && chars.peek() == Some(&'s') {
-                    chars.next(); // consume 's' after '\'
-                    has_whitespace = true;
-                    current_state = State::Whitespace;
-                } else {
-                    return None; // invalid character 
                 }
             },
             State::MandatoryA => {
@@ -248,7 +245,7 @@ pub fn is_special_case_regex(regex: &str) -> Option<(usize, usize, bool)> {
                     has_whitespace = true;
                     current_state = State::Whitespace;
                 } else {
-                    return None; // invalid character
+                    return None; // invalid character in mandatory 'a' section
                 }
             },
             State::Whitespace => {
@@ -258,7 +255,7 @@ pub fn is_special_case_regex(regex: &str) -> Option<(usize, usize, bool)> {
         }
     }
 
-    if mandatory_a_count == 0 && !has_whitespace && optional_a_count == 0 {
+    if mandatory_a_count == 0 {
         return None;
     }
 
@@ -292,6 +289,7 @@ pub fn find_and_print_matches_special_case(text: &str, line_number: usize, optio
                     println!("{}:{}", line_number, text.get(start_index..i).unwrap());
                 }
             }
+
         } else if c == 'b' {
             if i - start_index >= mandatory_a_count {
                 if has_whitespace {
@@ -311,6 +309,16 @@ pub fn find_and_print_matches_special_case(text: &str, line_number: usize, optio
 }
 
 
+
+// pub fn check_str_with_nfa(nfa: &NFA, line: &str, prefix: &str, start_positions: Vec<usize>, line_number:usize) {
+
+//     let matched_strs = nfa.check_str_by_prefix(prefix.len(), start_positions, line);
+//     if matched_strs.is_empty() {
+//         return;
+//     }
+//     helper_print(line_number, line, matched_strs);
+
+// }
 
 #[cfg(test)]
 mod tests {

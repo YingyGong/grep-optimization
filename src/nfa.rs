@@ -453,9 +453,6 @@ impl NFA {
             // temp_positions = cur_positions;
             std::mem::swap(&mut cur_positions, &mut next_positions);
             // println!("positions after iter {}: {:?}", i, cur_positions);
-            if i == line_len -1  {
-                println!("positions after iter {}: {:?}", i, cur_positions)
-            }
 
             // check any matched
             for accept_state in &self.accept_states {
@@ -464,9 +461,9 @@ impl NFA {
                     // println!("matched from index {} at char {}: {}", *start_pos, i, input_str[*start_pos..(i+1)].to_string());
                 }
             }
-    }
-    println!("Matched strings: {:?}", matched_strs);
 
+
+    }
     matched_strs
 }
 

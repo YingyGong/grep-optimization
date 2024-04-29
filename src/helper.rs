@@ -1,4 +1,5 @@
 use std::cmp::max;
+use std::f32::consts::E;
 use std::vec;
 use std::collections::{HashMap, HashSet};
 
@@ -207,6 +208,93 @@ pub fn helper_print_with_start(line_idx: usize, start_positions: Vec<usize>, lin
         println!("{}:{}", line_idx, line.get(start_idx..*end_idx).unwrap());
     }
 }
+
+pub fn is_special_case_regex(regex: &str) -> Option<(usize, usize, bool)> {
+    let mut optional_a_count = 0;
+    let mut mandatory_a_count = 0;
+    let mut has_whitespace = false;
+
+    enum State {
+        OptionalA,
+        MandatoryA,
+        Whitespace,
+    }
+
+    let mut current_state = State::OptionalA;
+
+    let mut chars = regex.chars().peekable();
+    while let Some(c) = chars.next() {
+        match current_state {
+            State::OptionalA => {
+                if c == 'a' && chars.peek() == Some(&'?') {
+                    optional_a_count += 1;
+                    chars.next(); // skip the '?' character
+                } else {
+                    current_state = State::MandatoryA;
+                    mandatory_a_count += 1; // start counting mandatory 'a's
+                }
+            },
+            State::MandatoryA => {
+                if c == 'a' {
+                    mandatory_a_count += 1;
+                } else if c == '\\' && chars.peek() == Some(&'s') {
+                    chars.next(); // consume 's' after '\'
+                    has_whitespace = true;
+                    current_state = State::Whitespace;
+                } else {
+                    return None; // invalid character in mandatory 'a' section
+                }
+            },
+            State::Whitespace => {
+                // nothing after '\s'
+                return None;
+            },
+        }
+    }
+
+    if mandatory_a_count == 0 {
+        return None;
+    }
+
+    Some((optional_a_count, mandatory_a_count, has_whitespace))
+}
+
+pub fn find_and_print_matches_special_case(text: &str, line_number: usize, optional_a_count: usize, mandatory_a_count: usize, has_whitespace: bool) -> Result<(), &'static str>{
+    let mut start_index = 0;
+
+    // i is the end index, inclusive
+    for (i, c) in text.char_indices() {
+        if i - start_index == optional_a_count + mandatory_a_count {
+            if has_whitespace {
+                println!("{}:{}", line_number, text.get(start_index..(i + 1)).unwrap());
+                start_index = i + 1;
+                continue;
+            } else {
+                println!("{}:{}", line_number, text.get(start_index..i).unwrap());
+                start_index = i;
+            }
+        }
+        if c == 'a' {
+            continue;
+        } else if c == 'b' {
+            if i - start_index >= mandatory_a_count {
+                if has_whitespace {
+                    println!("{}:{}", line_number, text.get(start_index..(i + 1)).unwrap());
+                } else {
+                    println!("{}:{}", line_number, text.get(start_index..i).unwrap());
+                }
+            }
+            start_index = i + 1;
+        } else {
+           return Err("Invalid character in text");
+        }
+    }
+
+    Ok(())
+
+}
+
+
 
 // pub fn check_str_with_nfa(nfa: &NFA, line: &str, prefix: &str, start_positions: Vec<usize>, line_number:usize) {
 
@@ -634,6 +722,15 @@ mod tests {
         }
         let regex = "\\";
         let new_str = format!(r"{}", regex);
+    }
+
+    #[test]
+    fn test_find_and_print_matches_special_case() {
+        let text = "aaabaaaaaab";
+        let optional_a_count = 1;
+        let mandatory_a_count = 2;
+        let has_whitespace = true;
+        find_and_print_matches_special_case(text, 1, optional_a_count, mandatory_a_count, has_whitespace);
     }
 
     

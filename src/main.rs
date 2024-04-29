@@ -7,7 +7,7 @@ mod helper;
 use crate::nfa::NFA;
 use crate::earley_parse::CFG;
 use crate::cfg::cfg_for_regular_expression;
-use crate::helper::{bad_char_table, good_suffix_table, full_shift_table, find_prefix_boyer_moore, helper_print, helper_print_with_start};
+use crate::helper::{bad_char_table, good_suffix_table, full_shift_table, find_prefix_boyer_moore, helper_print, helper_print_with_start, is_special_case_regex, find_and_print_matches_special_case};
 use std::collections::HashSet;
 use std::env;
 use std::error::Error;
@@ -22,57 +22,58 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
     let file = File::open(filename)?;
     let reader = BufReader::new(file);
 
-    // let (prefix, rest) = cfg::prefix_and_remainder_extract(&cfg_for_regular_expression().parse(regex).unwrap().collapse());
-    // println!("prefix: {} and rest {}", prefix, rest);
-
-    let mut nfa = nfa::nfa_from_reg(&regex);
-    // nfa.debug_helper();
-
-    let prefix = nfa.find_prefix_from_nfa();
-    // println!("prefix: {}", prefix);
-    // nfa.debug_helper();
-
-    if !prefix.is_empty() {
-        let r = bad_char_table(prefix.as_str());
-        let l = good_suffix_table(prefix.as_str());
-        let f = full_shift_table(prefix.as_str());
-        // println!("r: {:?}, l: {:?}, f: {:?}", r, l, f);
-
-        for (index, line) in reader.lines().enumerate() {
-            let line = line?;
-    
-            let start_positions: Vec<usize> = find_prefix_boyer_moore(&prefix, &line, &r, &l, &f);
-    
-            // println!("prefix {} with start_positions: {:?}", prefix, start_positions);
-    
-            if start_positions.is_empty() {
-                continue;
+    match is_special_case_regex(regex) {
+        Some((optional_a_count, mandatory_a_count, has_whitespace)) => {
+            for (index, line) in reader.lines().enumerate() {
+                let line = line?;
+                find_and_print_matches_special_case(&line, index + 1, optional_a_count, mandatory_a_count, has_whitespace);
+               
             }
-            // nfa.debug_helper();
-            let prefix_len = prefix.len();
-            
-            let matched_tuples = nfa.check_str_with_start( &start_positions, &line, prefix_len);
-            
+        },
+        None => {
+            let mut nfa = nfa::nfa_from_reg(&regex);
 
-            if matched_tuples.is_empty() {
-                continue;
+        let prefix = nfa.find_prefix_from_nfa();
+
+        if !prefix.is_empty() {
+            let r = bad_char_table(prefix.as_str());
+            let l = good_suffix_table(prefix.as_str());
+            let f = full_shift_table(prefix.as_str());
+
+            for (index, line) in reader.lines().enumerate() {
+                let line = line?;
+        
+                let start_positions: Vec<usize> = find_prefix_boyer_moore(&prefix, &line, &r, &l, &f);
+        
+        
+                if start_positions.is_empty() {
+                    continue;
+                }
+                let prefix_len = prefix.len();
+                
+                let matched_tuples = nfa.check_str_with_start( &start_positions, &line, prefix_len);
+                
+
+                if matched_tuples.is_empty() {
+                    continue;
+                }
+                helper_print_with_start(index + 1, start_positions, &line, matched_tuples, prefix_len);
+
             }
-            helper_print_with_start(index + 1, start_positions, &line, matched_tuples, prefix_len);
-
-            
         }
-    }
-    else {
-        for (index, line) in reader.lines().enumerate() {
-            let line = line?;
-            let matched_tuples = nfa.check_str_without_start(&line);
-            if matched_tuples.is_empty() {
-                continue;
+        else {
+            for (index, line) in reader.lines().enumerate() {
+                let line = line?;
+                let matched_tuples = nfa.check_str_without_start(&line);
+                if matched_tuples.is_empty() {
+                    continue;
+                }
+                helper_print(index + 1, &line, matched_tuples);
             }
-            helper_print(index + 1, &line, matched_tuples);
         }
-    }
-    
+            },
+        }
+
 
     Ok(())
 }

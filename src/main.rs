@@ -24,10 +24,7 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
 
     match is_special_case_regex(regex) {
         Some((optional_a_count, mandatory_a_count, has_whitespace)) => {
-            // println!("Special case regex detected");
-            // println!("Optional a count: {}", optional_a_count);
-            // println!("Mandatory a count: {}", mandatory_a_count);
-            // println!("Has whitespace: {}", has_whitespace);
+            
             for (index, line) in reader.lines().enumerate() {
                 let line = line?;
                 find_and_print_matches_special_case(&line, index + 1, optional_a_count, mandatory_a_count, has_whitespace);

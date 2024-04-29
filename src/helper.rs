@@ -261,6 +261,7 @@ pub fn is_special_case_regex(regex: &str) -> Option<(usize, usize, bool)> {
 
 pub fn find_and_print_matches_special_case(text: &str, line_number: usize, optional_a_count: usize, mandatory_a_count: usize, has_whitespace: bool) -> Result<(), &'static str>{
     let mut start_index = 0;
+    let len = text.len();
 
     // i is the end index, inclusive
     for (i, c) in text.char_indices() {
@@ -275,7 +276,13 @@ pub fn find_and_print_matches_special_case(text: &str, line_number: usize, optio
             }
         }
         if c == 'a' {
-            continue;
+            if i != len - 1 {
+                continue;
+            }
+            if i - start_index >= mandatory_a_count {
+                println!("{}:{}", line_number, text.get(start_index..i).unwrap());
+            }
+
         } else if c == 'b' {
             if i - start_index >= mandatory_a_count {
                 if has_whitespace {

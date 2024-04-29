@@ -25,7 +25,6 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
     match is_special_case_regex(regex) {
         Some((optional_a_count, mandatory_a_count, has_whitespace)) => {
             // send error
-            return Err(io::Error::new(io::ErrorKind::InvalidInput, "Special case regex not supported"));
             for (index, line) in reader.lines().enumerate() {
                 let line = line?;
                 find_and_print_matches_special_case(&line, index + 1, optional_a_count, mandatory_a_count, has_whitespace);
@@ -33,7 +32,7 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
             }
         },
         None => {
-            let mut nfa = nfa::nfa_from_reg(&regex);
+        let mut nfa = nfa::nfa_from_reg(&regex);
 
         let prefix = nfa.find_prefix_from_nfa();
 

@@ -280,7 +280,7 @@ pub fn find_and_print_matches_special_case(text: &str, line_number: usize, optio
                 continue;
             }
             if i - start_index >= mandatory_a_count {
-                println!("{}:{}", line_number, text.get(start_index..i).unwrap());
+                println!("{}:{}", line_number, text.get(start_index..(i +1)).unwrap());
             }
 
         } else if c == 'b' {

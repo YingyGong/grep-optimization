@@ -230,6 +230,7 @@ pub fn is_special_case_regex(regex: &str) -> Option<(usize, usize, bool)> {
                     optional_a_count += 1;
                     chars.next(); // skip the '?' character
                 } else {
+                    assert!(c == 'a');
                     current_state = State::MandatoryA;
                     mandatory_a_count += 1; // start counting mandatory 'a's
                 }

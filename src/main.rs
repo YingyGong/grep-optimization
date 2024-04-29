@@ -31,7 +31,6 @@ fn grep(regex: &str, filename: &str, only_matching: bool, line_number: bool)
             for (index, line) in reader.lines().enumerate() {
                 let line = line?;
                 find_and_print_matches_special_case(&line, index + 1, optional_a_count, mandatory_a_count, has_whitespace);
-               
             }
         },
         None => {

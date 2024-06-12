@@ -1,6 +1,0 @@
-correctness:
-    script: "/testers/cs37/regex/correctness/test"
-performance:
-    script: "/testers/cs37/regex/performance/test"
-reveal:
-    script: "/testers/cs37/regex/reveal/test"

@@ -1,0 +1,9 @@
+file,size,custom_grep_avg_time_us,standard_grep_avg_time_us
+test_files/file_10.txt,10,5,2
+test_files/file_20.txt,20,8,2
+test_files/file_30.txt,30,13,3
+test_files/file_40.txt,40,23,4
+test_files/file_50.txt,50,31,6
+test_files/file_60.txt,60,45,10
+test_files/file_70.txt,70,63,16
+test_files/file_80.txt,80,84,24

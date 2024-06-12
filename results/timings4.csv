@@ -1,0 +1,8 @@
+file,size,no_prefixgrep_avg_time_us,with_prefix_grep_avg_time_us
+test_files/file_10.txt,100,45,16
+test_files/file_15.txt,150,116,76
+test_files/file_20.txt,200,262,236
+test_files/file_25.txt,250,494,585
+test_files/file_30.txt,300,836,1218
+test_files/file_35.txt,350,1306,2256
+test_files/file_40.txt,400,2219,3831

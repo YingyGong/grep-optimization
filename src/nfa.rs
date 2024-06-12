@@ -1,3 +1,4 @@
+use core::time;
 use std::collections::{HashMap, HashSet};
 use std::vec;
 use crate::earley_parse::{ASTNode};
@@ -9,6 +10,7 @@ use crate::earley_parse::PrettyPrint;
 use std::iter::Filter;
 use core::ops::RangeInclusive;
 // use indexmap::IndexSet;
+
 
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -214,61 +216,62 @@ impl NFA {
 
     pub fn epsilon_close(&mut self) {
         // println!("Epsilon close");
-        let mut old: HashSet<(State, State)> = HashSet::new();
-        let mut cur: HashSet<(State, State)> = HashSet::new();
-        // find all episolon transitions from all state
+        let mut cur: HashMap<State, HashSet<State>> = HashMap::new();
+        // let mut old: HashMap<State, HashSet<State>> = HashMap::new();
+
+        // let start_time = std::time::Instant::now();
+
         for state in &self.states {
             if let Some(transition) = self.transitions.get_mut(&state) {
                 let transition_copy = transition.clone();
                 for (t, next_state) in transition_copy {
                     if t == Transition::Epsilon {
-                        cur.insert((state.clone(), next_state.clone()));
+                        cur.entry(state.clone()).or_default().insert(next_state.clone());
                     }
                 }
                 transition.retain(|(t, _)| *t != Transition::Epsilon);
             }
         }
 
-        while old != cur {
-            old = cur.clone();
-            cur = HashSet::new();
-            for (state, next_state) in old.iter() {
-                cur.insert((state.clone(), next_state.clone()));
-            }
-            for (state, next_state) in old.iter() {
-                // find all starting with next_state
-                for (state_b, state_c) in old.iter() {
-                    if state_b == next_state {
-                        cur.insert((state.clone(), state_c.clone()));
+        let mut new_edges: Vec<(State, State)> = Vec::new();
+        for (state, next_states) in cur.clone() {
+            let mut to_visit: Vec<State> = next_states.iter().cloned().collect();
+            while let Some(next_state) = to_visit.pop() {
+                if let Some(final_states) = cur.get(&next_state) {
+                    for final_state in final_states {
+                        if cur.get(&state).map_or(true, |s| !s.contains(final_state)) {
+                            new_edges.push((state.clone(), final_state.clone()));
+                            to_visit.push(final_state.clone());
+                        }
                     }
                 }
             }
         }
+        // println!("Time for add new edges: {:?}", start_time.elapsed());
 
-        for (state, next_state) in cur.iter() {
-            let transition_copy = self.transitions.get(next_state).unwrap_or(&HashSet::new()).clone();
-            for (t, state_c) in transition_copy {
-                if t != Transition::Epsilon 
-                {   
-                    self.add_transition(state.clone(), t.clone(), state_c.clone());
+        for (state, final_state) in new_edges {
+            cur.get_mut(&state).unwrap().insert(final_state);
+        }
+
+        // add all the new edges to the transitions
+        for (state, final_states) in cur {
+            for next_state in final_states {
+                let transition_copy = self.transitions.get(&next_state).unwrap_or(&HashSet::new()).clone();
+                // get all transitions from final state
+                for (t, state_c) in transition_copy {
+                    if t != Transition::Epsilon 
+                    {   
+                        self.add_transition(state.clone(), t.clone(), state_c.clone());
+                    }
+                }
+                // if next_state is accept state, add state to accept states
+                if self.accept_states.contains(&next_state) {
+                    self.accept_states.insert(state.clone());
                 }
             }
-            // if next_state is accept state, add state to accept states
-            if self.accept_states.contains(next_state) {
-                self.accept_states.insert(state.clone());
-            }
         }
-
-        // remove all repetitive transitions
-        for state in &self.states {
-            if let Some(transition) = self.transitions.get_mut(state) {
-                let mut seen: HashSet<(Transition, State)> = HashSet::new();
-                transition.retain(|(transition_char, next_state)| seen.insert((transition_char.clone(), next_state.clone())));
-            }
-        }
-
-
     }
+     
 
     pub fn remove_unreachable_states(&mut self) {
         let mut reachable_states: HashSet<State> = HashSet::new();
@@ -416,9 +419,7 @@ impl NFA {
             }
             
             // switch the hashmap
-            // temp_positions = cur_positions;
             std::mem::swap(&mut cur_positions, &mut next_positions);
-            // println!("positions after iter {}: {:?}", i, cur_positions);
 
             // check any matched
             for accept_state in &self.accept_states {
@@ -483,14 +484,17 @@ impl NFA {
 
 
     pub fn find_prefix_from_nfa(&mut self) -> String {
-        let mut cur_state_vec = vec![self.start_state.clone()];
+        let mut cur_state_vec = HashSet::new();
+        cur_state_vec.insert(self.start_state.clone());
         let mut prefix = String::new();
 
         assert!(cur_state_vec.len() == 1);
 
+        let time = std::time::Instant::now();
+
         'outer: while ! cur_state_vec.is_empty() {
             let mut common_char: Option<char> = None;
-            let mut next_state_vec: Vec<State> = Vec::new();
+            let mut next_state_vec = HashSet::new();
             for (i, cur_state) in cur_state_vec.iter().enumerate() {
                 if self.accept_states.contains(cur_state) {
                     break 'outer;
@@ -505,13 +509,13 @@ impl NFA {
                             }
                             if let Transition::Char(c) = transition {
                                 common_char = Some(*c);
-                                next_state_vec.push(state.clone());
+                                next_state_vec.insert(state.clone());
                                 for (key, value) in iter {
                                     if let Transition::Char(c) = key {
                                         if *c != common_char.unwrap() {
                                             break 'outer;
                                         }
-                                        next_state_vec.push(value.clone());
+                                        next_state_vec.insert(value.clone());
                                     }
                                     else {
                                         break;
@@ -533,7 +537,7 @@ impl NFA {
                                 if *c != common_char.unwrap()  {
                                     break 'outer;
                                 }
-                                next_state_vec.push(state.clone());
+                                next_state_vec.insert(state.clone());
                             }
                             else {
                                 break;
@@ -545,10 +549,14 @@ impl NFA {
                     break 'outer;
                 }
             }
+            // if common_char.is_none() {
+            //     break;
+            // }
             prefix.push(common_char.unwrap());
             cur_state_vec = next_state_vec;
             
     }
+
 
     // modify nfa to have prefix start states
     // let ori_start_state = self.start_state.clone();
@@ -562,12 +570,16 @@ impl NFA {
     self.epsilon_close();
     // remove unreachable states
     self.remove_unreachable_states();
-
+    
     prefix
 
     }
 
-    
+    // pub fn find_suffix_from_nfa(&mut self) -> String {
+    //     let mut cur_state_set = self.accept_states.clone();
+        
+    // }
+
     
 }
 
@@ -580,7 +592,6 @@ impl Clone for NFA {
             start_state: self.start_state.clone(),
             accept_states: self.accept_states.clone(),
             next_state_id: self.next_state_id,
-            // prefix_start_states: self.prefix_start_states.clone(),
         };
         new_nfa
     }
@@ -590,17 +601,71 @@ pub fn nfa_from_reg(regex: &str) -> NFA {
     let cfg = cfg_for_regular_expression();
     let ast = cfg.parse(regex).unwrap().collapse();
     let mut nfa = NFA::from_regex(&ast);
+
     NFA::epsilon_close(&mut nfa);
     NFA::remove_unreachable_states(&mut nfa);
     nfa
 }
 
+pub fn generate_regex_pattern(size: usize) -> String {
+    let optional_part: String = std::iter::repeat("a?").take(size).collect();
+    let mandatory_part:String = std::iter::repeat("a").take(size).collect();
+    format!("{}{}", optional_part, mandatory_part)
+}
 
 
 #[cfg(test)]
 mod test {
 
+    use std::{arch::aarch64::float32x2_t, result};
+
     use super::*;
+
+    #[test]
+    fn test_time() {
+        let start = std::time::Instant::now();
+        let nfa = nfa_from_reg(r"is \s");
+        // println!("Time: {:?}", start.elapsed());
+    }
+
+
+    fn test_a_star(size: usize) {
+        let pattern = generate_regex_pattern(size);
+        let mut nfa = nfa_from_reg(&pattern);
+        nfa.debug_helper();
+        // println!("\n");
+        // let prefix = nfa.find_prefix_from_nfa();
+        // nfa.debug_helper();
+        // println!("Prefix: {}", prefix);
+    }
+
+    fn test_a_star_prefix_extraction(size: usize) -> f32 {
+        let pattern = generate_regex_pattern(size);
+        let mut nfa = nfa_from_reg(&pattern);
+        let start = std::time::Instant::now();
+        let prefix = nfa.find_prefix_from_nfa();
+        start.elapsed().as_secs_f32()
+    }
+
+    #[test]
+    fn test_a_star_specific() {
+        let start = std::time::Instant::now();
+        test_a_star(3);
+        println!("Test Time: {:?}", start.elapsed());
+    }
+
+    #[test]
+    fn test_a_star_prefix_extraction_specific() {
+        let sizes = vec![2, 5, 7, 10, 15, 17, 20, 30];
+        let mut result_time = Vec::new();
+        for size in sizes {
+            let time = test_a_star_prefix_extraction(size);
+            result_time.push(time);
+        }
+        println!("Result Time: {:?}", result_time);
+    }
+
+
     #[test]
     fn test_shift_nfa() {
         println!("Test shift nfa");
@@ -777,39 +842,37 @@ mod test {
     //     println!("{:?}", nfa.check_str_princeton("jghfhjfckhuieabkc"));
     // }
 
-    // #[test]
-    // fn test_epsilon_closure() {
-    //     println!("Test epsilon closure");
-    //     let mut nfa = NFA::new_with_n_states(4);
-    //     let state0 = State { id: 0 };
-    //     let state1 = State { id: 1 };
-    //     let state2 = State { id: 2 };
-    //     let state3 = State { id: 3 };
-    //     let state4 = State { id: 4 };
-
-    //     nfa.add_transition(state0.clone(), Transition::Char('0'), state0.clone());
-    //     nfa.add_transition(state0.clone(), Transition::Epsilon, state1.clone());
-    //     // 1, 1, 1
-    //     nfa.add_transition(state1.clone(), Transition::Char('1'), state1.clone());
-    //     // 1, epsilon, 2
-    //     nfa.add_transition(state1.clone(), Transition::Epsilon, state2.clone());
-    //     // 2, 0, 2
-    //     nfa.add_transition(state2.clone(), Transition::Char('0'), state2.clone());
-    //     // 2, epsilon, 3
-    //     nfa.add_transition(state2.clone(), Transition::Epsilon, state3.clone());
-    //     // 2, 0, 4
-    //     nfa.add_transition(state2.clone(), Transition::Char('0'), state4.clone());
-    //     nfa.accept_states.insert(state3.clone());
-    //     nfa.accept_states.insert(state4.clone());
-    //     let nfa = NFA::epsilon_close(nfa);
-    //     nfa.debug_helper();
-    // }
-
     #[test]
-    fn test_rename_states() {
-        let mut nfa = nfa_from_reg("(fd)+|fl");
-        nfa.debug_helper();
-        nfa.rename_states();
+    fn test_epsilon_closure() {
+        println!("Test epsilon closure");
+        let mut nfa = NFA::new();
+        let state0 = State { id: 0 };
+        let state1 = State { id: 1 };
+        let state2 = State { id: 2 };
+        let state3 = State { id: 3 };
+        let state4 = State { id: 4 };
+        nfa.add_state();
+        nfa.add_state();
+        nfa.add_state();
+        nfa.add_state();
+
+        nfa.add_transition(state0.clone(), Transition::Char('0'), state0.clone());
+        nfa.add_transition(state0.clone(), Transition::Epsilon, state1.clone());
+        // 1, 1, 1
+        nfa.add_transition(state1.clone(), Transition::Char('1'), state1.clone());
+        // 1, epsilon, 2
+        nfa.add_transition(state1.clone(), Transition::Epsilon, state2.clone());
+        // 2, 0, 2
+        nfa.add_transition(state2.clone(), Transition::Char('0'), state2.clone());
+        // 2, epsilon, 3
+        nfa.add_transition(state2.clone(), Transition::Epsilon, state3.clone());
+        // 2, 0, 4
+        nfa.add_transition(state2.clone(), Transition::Char('0'), state4.clone());
+        nfa.accept_states.insert(state3.clone());
+        nfa.accept_states.insert(state4.clone());
+        // nfa.debug_helper();
+        NFA::epsilon_close(&mut nfa);
+        println!("Done");
         nfa.debug_helper();
     }
 
@@ -893,6 +956,17 @@ mod test {
         let prefix = nfa.find_prefix_from_nfa();
         println!("Prefix: {}", prefix);
         nfa.debug_helper();
+    }
+
+    #[test]
+    fn test_prefix_from_nfa_10() {
+        let time = std::time::Instant::now();
+        let mut nfa = nfa_from_reg("(aaaaaa|aaaaaa)ddddd");
+        // nfa.debug_helper();
+        let prefix = nfa.find_prefix_from_nfa();
+        println!("Prefix: {}", prefix);
+        println!("Time elapsed in test_prefix_extract_4() is: {:?}", time.elapsed());
+        // nfa.debug_helper();
     }
 
     #[test]

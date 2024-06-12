@@ -1,6 +1,5 @@
 use crate::earley_parse::ASTNode;
 use crate::earley_parse::CFG;
-use crate::earley_parse::PrettyPrint;
 pub use crate::earley_parse::nt;
 pub use crate::earley_parse::tr;
 
@@ -144,7 +143,11 @@ pub fn prefix_and_remainder_extract(node: &ASTNode) -> (String, String) {
                 let (prefix2, remainder2) = prefix_and_remainder_extract(&children[2]);
                 let (common_prefix, prefix_remainder1, prefix_remainder2) = two_str_common_prefix(&prefix1, &prefix2);
                 let remainder = format!("{}{}|{}{}", remainder1, prefix_remainder1, remainder2, prefix_remainder2);
-                (common_prefix, remainder)
+                if remainder == "|" {
+                    (common_prefix, String::new())
+                } else {
+                    (common_prefix, remainder)
+                }
             },
             "Concat" => {
                 let (prefix1, remainder1) = prefix_and_remainder_extract(&children[0]);
@@ -157,7 +160,9 @@ pub fn prefix_and_remainder_extract(node: &ASTNode) -> (String, String) {
             },
             "Repeat" => {
                 match children[1].unwrap_terminal() {
-                    '*' | '?' => (String::new(), format!("{}{}{}", prefix_and_remainder_extract(&children[0]).0, prefix_and_remainder_extract(&children[0]).1, children[1].unwrap_terminal())),
+                    '*' => (String::new(), format!("{}{}{}", prefix_and_remainder_extract(&children[0]).0, prefix_and_remainder_extract(&children[0]).1, children[1].unwrap_terminal())),
+                    '?' => 
+                    (String::new(), format!("{}{}{}", prefix_and_remainder_extract(&children[0]).0, prefix_and_remainder_extract(&children[0]).1, children[1].unwrap_terminal())),
                     '+' => {
                         let prefix = prefix_and_remainder_extract(&children[0]).0;
                         let mut repeat_char = '*';
@@ -240,15 +245,18 @@ fn two_str_common_prefix(s1: &str, s2: &str) -> (String, String, String) {
     (common_prefix, remainder1, remainder2)
 }
 
+
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::nfa_optimized::generate_regex_pattern;
+    use crate::earley_parse::PrettyPrint;
+
     #[test]
     fn test_cfg_for_regular_expression() {
         let cfg = cfg_for_regular_expression();
         let result = cfg.parse("ab*|c+");
         assert!(result.is_some());
-        // println!("{:#?}", PrettyPrint(&result.unwrap().collapse()));
     }
 
     #[test]
@@ -273,6 +281,28 @@ mod test {
         let result = cfg.parse(r"\\");
         assert!(result.is_some());
         println!("{:#?}", PrettyPrint(&result.unwrap().collapse()));
+    }
+
+    #[test]
+    fn test_prefix_long() {
+        let pattern = generate_regex_pattern(10);
+        let cfg = cfg_for_regular_expression();
+        let result = cfg.parse(pattern.as_str());
+        assert!(result.is_some());
+        let (prefix, remainder) = prefix_and_remainder_extract(&result.unwrap().collapse());
+        println!("{} and {}", prefix, remainder);
+    }
+
+    pub fn test_prefix_general(pattern: &str, debug: bool) {
+        let cfg = cfg_for_regular_expression();
+        let result = cfg.parse(pattern);
+        assert!(result.is_some());
+        let tree = result.unwrap().collapse();
+        if debug {
+            println!("{:#?}", PrettyPrint(&tree));
+        }
+        let (prefix, remainder) = prefix_and_remainder_extract(&tree);
+        println!("{} and {}", prefix, remainder);
     }
 
     #[test]
@@ -309,14 +339,15 @@ mod test {
     }
 
     #[test]
+    fn test_prefix_extract_4() {
+        let time = std::time::Instant::now();
+        test_prefix_general(r"(aaaaaa|aaaaaa)ddddd", false);
+        println!("Time elapsed in test_prefix_extract_4() is: {:?}", time.elapsed());
+    }
+
+    #[test]
     fn test_prefix_and_remainder_extract_after_plus() {
         let mut r = String::new();
-        // for c in 0x20u8..=0x80 {
-        //     let ch = c as char;
-        //     if !"{|*()+?\\.}".contains(ch) {
-        //         r.push(c as char);
-        //     }
-        // }
         for &c in &['|', '*', '(', ')', '+', '?', '\\', '{', '}', '.'] {
             r.push('\\');
             r.push(c );
